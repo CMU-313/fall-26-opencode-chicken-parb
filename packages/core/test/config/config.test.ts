@@ -66,6 +66,18 @@ describe("Config", () => {
     }),
   )
 
+  it.effect("returns overnight start hour from the latest document", () =>
+    Effect.sync(() => {
+      const entries = [
+        new Config.Document({ type: "document", info: new Config.Info({ overnight: { start_hour: 2 } }) }),
+        new Config.Document({ type: "document", info: new Config.Info({}) }),
+        new Config.Document({ type: "document", info: new Config.Info({ overnight: { start_hour: 22 } }) }),
+      ]
+
+      expect(Config.latest(entries, "overnight")?.start_hour).toBe(22)
+    }),
+  )
+
   it.effect("detects v1 configuration from any v1-only top-level key", () =>
     Effect.sync(() => {
       expect(ConfigMigrateV1.isV1({ snapshot: false })).toBe(true)
