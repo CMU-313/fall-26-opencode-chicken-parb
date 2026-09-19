@@ -286,3 +286,25 @@ export const promoteNextQueued = Effect.fn("SessionInput.promoteNextQueued")(fun
     .pipe(Effect.orDie)
   return row === undefined ? false : yield* publish(db, events, sessionID, [row]).pipe(Effect.as(true))
 })
+
+export const promoteNextOvernight = Effect.fn("SessionInput.promoteNextOvernight")(function* (
+  db: DatabaseService,
+  events: EventV2.Interface,
+  sessionID: SessionSchema.ID,
+) {
+  const row = yield* db
+    .select()
+    .from(SessionInputTable)
+    .where(
+      and(
+        eq(SessionInputTable.session_id, sessionID),
+        isNull(SessionInputTable.promoted_seq),
+        eq(SessionInputTable.delivery, "overnight"),
+      ),
+    )
+    .orderBy(asc(SessionInputTable.admitted_seq))
+    .limit(1)
+    .get()
+    .pipe(Effect.orDie)
+  return row === undefined ? false : yield* publish(db, events, sessionID, [row]).pipe(Effect.as(true))
+})

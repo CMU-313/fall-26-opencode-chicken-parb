@@ -22,6 +22,8 @@ export interface Interface {
   readonly run: (input: {
     readonly sessionID: SessionSchema.ID
     readonly force: boolean
+    /** Hour (0-23) when overnight queue becomes eligible. Undefined disables overnight processing. */
+    readonly overnightStartHour?: number
   }) => Effect.Effect<void, RunError>
 }
 

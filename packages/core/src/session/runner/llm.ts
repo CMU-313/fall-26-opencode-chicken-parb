@@ -192,6 +192,10 @@ const layer = Layer.effect(
           promoted += Number(yield* SessionInput.promoteNextQueued(db, events, session.id))
           promoted += yield* SessionInput.promoteSteers(db, events, session.id, cutoff)
         }
+        if (promotion === "overnight") {
+          promoted += Number(yield* SessionInput.promoteNextOvernight(db, events, session.id))
+          promoted += yield* SessionInput.promoteSteers(db, events, session.id, cutoff)
+        }
         if (promoted > 0) currentStep = 1
       }
       const system =
@@ -383,13 +387,29 @@ const layer = Layer.effect(
     const run = Effect.fn("SessionRunner.run")(function* (input: {
       readonly sessionID: SessionSchema.ID
       readonly force: boolean
+      readonly overnightStartHour?: number
     }) {
       const hasSteer = yield* SessionInput.hasPending(db, input.sessionID, "steer")
       const hasQueue = hasSteer ? false : yield* SessionInput.hasPending(db, input.sessionID, "queue")
-      if (!input.force && !hasSteer && !hasQueue) return
+      const isOvernightWindowOpen = () => {
+        if (input.overnightStartHour === undefined) return false
+        const now = new Date()
+        return now.getHours() >= input.overnightStartHour
+      }
+      const hasOvernight =
+        hasSteer || hasQueue
+          ? false
+          : isOvernightWindowOpen() && (yield* SessionInput.hasPending(db, input.sessionID, "overnight"))
+      if (!input.force && !hasSteer && !hasQueue && !hasOvernight) return
       yield* failInterruptedTools(input.sessionID)
-      let promotion: SessionInput.Delivery | undefined = hasSteer ? "steer" : hasQueue ? "queue" : undefined
-      let shouldRun = input.force || hasSteer || hasQueue
+      let promotion: SessionInput.Delivery | undefined = hasSteer
+        ? "steer"
+        : hasQueue
+          ? "queue"
+          : hasOvernight
+            ? "overnight"
+            : undefined
+      let shouldRun = input.force || hasSteer || hasQueue || hasOvernight
       while (shouldRun) {
         let needsContinuation = true
         let step = 1
@@ -400,8 +420,16 @@ const layer = Layer.effect(
           promotion = "steer"
           if (!needsContinuation) needsContinuation = yield* SessionInput.hasPending(db, input.sessionID, "steer")
         }
+        // Check regular queue first, then overnight if window is open
         shouldRun = yield* SessionInput.hasPending(db, input.sessionID, "queue")
-        promotion = shouldRun ? "queue" : undefined
+        if (shouldRun) {
+          promotion = "queue"
+        } else if (isOvernightWindowOpen()) {
+          shouldRun = yield* SessionInput.hasPending(db, input.sessionID, "overnight")
+          promotion = shouldRun ? "overnight" : undefined
+        } else {
+          promotion = undefined
+        }
       }
     })
 
