@@ -1783,6 +1783,22 @@ export default function Page() {
     setFollowup("paused", draft.sessionID, undefined)
   }
 
+  /** Send draft directly to overnight queue (immediately admitted with delivery: "overnight"). */
+  const sendToOvernight = async (draft: FollowupDraft) => {
+    try {
+      await sendFollowupDraft({
+        api: sdk().api.session,
+        sync: sync(),
+        serverSync: serverSync(),
+        draft,
+        optimisticBusy: draft.sessionDirectory === sdk().directory,
+        delivery: "overnight",
+      })
+    } catch (err) {
+      fail(err)
+    }
+  }
+
   const followupDock = createMemo(() => queuedFollowups().map((item) => ({ id: item.id, text: followupText(item) })))
 
   const sendFollowup = (sessionID: string, id: string, opts?: { manual?: boolean }) => {
@@ -2198,6 +2214,7 @@ export default function Page() {
                       onEditLoaded={clearFollowupEdit}
                       shouldQueue={queueEnabled}
                       onQueue={queueFollowup}
+                      onSendOvernight={sendToOvernight}
                       onAbort={() => {
                         const id = params.id
                         if (!id) return
@@ -2228,6 +2245,7 @@ export default function Page() {
                       onEditLoaded: clearFollowupEdit,
                       shouldQueue: queueEnabled,
                       onQueue: queueFollowup,
+                      onSendOvernight: sendToOvernight,
                       onAbort: () => {
                         const id = params.id
                         if (!id) return

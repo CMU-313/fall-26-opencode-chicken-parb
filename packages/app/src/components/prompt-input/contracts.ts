@@ -52,6 +52,8 @@ export interface PromptInputProps {
   onEditLoaded?: () => void
   shouldQueue?: () => boolean
   onQueue?: (draft: FollowupDraft) => void
+  /** Send draft to overnight queue (immediately admitted with delivery: "overnight"). */
+  onSendOvernight?: (draft: FollowupDraft) => void
   onAbort?: () => void
   onSubmit?: () => void
 }

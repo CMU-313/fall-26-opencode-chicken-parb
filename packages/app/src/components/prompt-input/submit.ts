@@ -198,7 +198,8 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
             ]
           : [],
       ),
-      delivery: input.delivery,
+      // Type assertion needed until client contracts are regenerated with "overnight" delivery
+      delivery: input.delivery as "steer" | "queue" | undefined,
     })
     return true
   } catch (err) {
@@ -229,6 +230,8 @@ type PromptSubmitInput = {
   onNewSessionWorktreeReset?: () => void
   shouldQueue?: Accessor<boolean>
   onQueue?: (draft: FollowupDraft) => void
+  /** Send draft to overnight queue (immediately admitted with delivery: "overnight"). */
+  onSendOvernight?: (draft: FollowupDraft) => void
   onAbort?: () => void
   onSubmit?: () => void
   model?: ModelSelection
@@ -320,6 +323,12 @@ export function createPromptSubmit(input: PromptSubmitInput) {
 
   const handleSubmit = async (event: Event) => {
     event.preventDefault()
+
+    // Check if shift key is pressed for overnight delivery
+    const isShiftPressed =
+      (event instanceof KeyboardEvent && event.shiftKey) ||
+      (event instanceof MouseEvent && event.shiftKey) ||
+      ("shiftKey" in event && (event as { shiftKey?: boolean }).shiftKey)
 
     const target = prompt.capture()
     const submission = createPromptSubmissionState({
@@ -484,6 +493,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
 
     if (!isNewSession && mode === "normal" && input.shouldQueue?.()) {
       input.onQueue?.(draft)
+      clearContext(submission.target())
+      clearInput()
+      return
+    }
+
+    // Shift+Submit sends to overnight queue
+    if (!isNewSession && mode === "normal" && isShiftPressed && input.onSendOvernight) {
+      input.onSendOvernight(draft)
       clearContext(submission.target())
       clearInput()
       return

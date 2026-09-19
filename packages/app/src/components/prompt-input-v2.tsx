@@ -216,6 +216,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     onNewSessionWorktreeReset: props.onNewSessionWorktreeReset,
     shouldQueue: props.shouldQueue,
     onQueue: props.onQueue,
+    onSendOvernight: props.onSendOvernight,
     onAbort: props.onAbort,
     onSubmit: props.onSubmit,
     model: props.controls.model.selection,
