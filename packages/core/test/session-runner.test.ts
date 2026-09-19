@@ -208,6 +208,7 @@ const skillGuidance = Layer.mock(SkillGuidance.Service, {
     ),
 })
 const referenceGuidance = Layer.mock(ReferenceGuidance.Service, { load: () => Effect.succeed(SystemContext.empty) })
+let overnightStartHour: number | undefined
 const config = Layer.succeed(
   Config.Service,
   Config.Service.of({
@@ -220,6 +221,7 @@ const config = Layer.succeed(
               buffer: 3_000,
               keep: new ConfigCompaction.Keep({ tokens: 1_000 }),
             }),
+            ...(overnightStartHour === undefined ? {} : { overnight: { start_hour: overnightStartHour } }),
           }),
         }),
       ]),
@@ -311,6 +313,7 @@ const insertSession = (id: SessionV2.ID) =>
 
 const setup = Effect.gen(function* () {
   const { db } = yield* Database.Service
+  overnightStartHour = undefined
   response = []
   systemBaseline = "Initial context"
   systemRemoved = false
@@ -2371,6 +2374,171 @@ describe("SessionRunnerLLM", () => {
 
       expect(requests).toHaveLength(1)
       expect(userTexts(requests[0]!)).toEqual(["Wait in queue"])
+    }),
+  )
+
+  it.effect("holds queued input until a running overnight turn finishes", () =>
+    Effect.gen(function* () {
+      yield* setup
+      overnightStartHour = 0
+      const session = yield* SessionV2.Service
+      const { db } = yield* Database.Service
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Overnight work" }),
+        delivery: "overnight",
+        resume: false,
+      })
+
+      requests.length = 0
+      responses = [
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+      ]
+      streamGate = yield* Deferred.make<void>()
+      streamStarted = yield* Deferred.make<void>()
+
+      const first = yield* session.resume(sessionID).pipe(Effect.forkChild)
+      yield* Deferred.await(streamStarted)
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Queued while overnight is running" }),
+        delivery: "queue",
+      })
+
+      expect(userTexts(requests[0]!)).toEqual(["Overnight work"])
+      expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(true)
+
+      yield* Deferred.succeed(streamGate, undefined)
+      yield* Fiber.join(first)
+      streamGate = undefined
+      streamStarted = undefined
+
+      expect(requests).toHaveLength(2)
+      expect(userTexts(requests[0]!)).toEqual(["Overnight work"])
+      expect(userTexts(requests[1]!)).toEqual(["Overnight work", "Queued while overnight is running"])
+      expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(false)
+    }),
+  )
+
+  it.effect("holds queued input until overnight continuation ends", () =>
+    Effect.gen(function* () {
+      yield* setup
+      overnightStartHour = 0
+      const session = yield* SessionV2.Service
+      const { db } = yield* Database.Service
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Overnight work" }),
+        delivery: "overnight",
+        resume: false,
+      })
+
+      requests.length = 0
+      responses = [
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.toolCall({ id: "call-echo", name: "echo", input: { text: "hello" } }),
+          LLMEvent.stepFinish({ index: 0, reason: "tool-calls" }),
+          LLMEvent.finish({ reason: "tool-calls" }),
+        ],
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+      ]
+      streamGate = yield* Deferred.make<void>()
+      streamStarted = yield* Deferred.make<void>()
+
+      const first = yield* session.resume(sessionID).pipe(Effect.forkChild)
+      yield* Deferred.await(streamStarted)
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Queued during overnight continuation" }),
+        delivery: "queue",
+      })
+      yield* Deferred.succeed(streamGate, undefined)
+      yield* Fiber.join(first)
+      streamGate = undefined
+      streamStarted = undefined
+
+      expect(requests).toHaveLength(3)
+      expect(userTexts(requests[0]!)).toEqual(["Overnight work"])
+      expect(userTexts(requests[1]!)).toEqual(["Overnight work"])
+      expect(userTexts(requests[2]!)).toEqual(["Overnight work", "Queued during overnight continuation"])
+      expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(false)
+    }),
+  )
+
+  it.effect("promotes queued input before remaining overnight items after the current overnight turn", () =>
+    Effect.gen(function* () {
+      yield* setup
+      overnightStartHour = 0
+      const session = yield* SessionV2.Service
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Overnight first" }),
+        delivery: "overnight",
+        resume: false,
+      })
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Overnight second" }),
+        delivery: "overnight",
+        resume: false,
+      })
+
+      requests.length = 0
+      responses = [
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+      ]
+      streamGate = yield* Deferred.make<void>()
+      streamStarted = yield* Deferred.make<void>()
+
+      const first = yield* session.resume(sessionID).pipe(Effect.forkChild)
+      yield* Deferred.await(streamStarted)
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Queued during overnight" }),
+        delivery: "queue",
+      })
+      yield* Deferred.succeed(streamGate, undefined)
+      yield* Fiber.join(first)
+      streamGate = undefined
+      streamStarted = undefined
+
+      expect(requests).toHaveLength(3)
+      expect(userTexts(requests[0]!)).toEqual(["Overnight first"])
+      expect(userTexts(requests[1]!)).toEqual(["Overnight first", "Queued during overnight"])
+      expect(userTexts(requests[2]!)).toEqual(["Overnight first", "Queued during overnight", "Overnight second"])
     }),
   )
 
