@@ -485,6 +485,134 @@ describe("SessionV2.prompt", () => {
     }),
   )
 
+  it.effect("durably admits overnight input without promoting it", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const session = yield* SessionV2.Service
+      wakeCalls.length = 0
+
+      const message = yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Run this tonight" }),
+        delivery: "overnight",
+        resume: false,
+      })
+
+      expect(message.delivery).toBe("overnight")
+      expect(yield* session.messages({ sessionID })).toEqual([])
+      expect(yield* admitted(message.id)).toMatchObject({
+        id: message.id,
+        sessionID,
+        prompt: { text: "Run this tonight" },
+        delivery: "overnight",
+      })
+      expect(yield* admitted(message.id)).not.toHaveProperty("promotedSeq")
+      expect(wakeCalls).toEqual([])
+    }),
+  )
+
+  it.effect("wakes execution after admitting overnight input", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const session = yield* SessionV2.Service
+      wakeCalls.length = 0
+
+      const message = yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Run this tonight" }),
+        delivery: "overnight",
+      })
+
+      expect(message.delivery).toBe("overnight")
+      expect(yield* session.messages({ sessionID })).toEqual([])
+      expect(wakeCalls).toEqual([sessionID])
+    }),
+  )
+
+  it.effect("returns an exact retry of a legacy projected overnight prompt", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const session = yield* SessionV2.Service
+      const events = yield* EventV2.Service
+      const prompt = Prompt.make({ text: "Historical overnight prompt" })
+      yield* events.publish(SessionEvent.Prompted, {
+        sessionID,
+        messageID,
+        timestamp: yield* DateTime.now,
+        prompt,
+        delivery: "overnight",
+      })
+
+      const retried = yield* session.prompt({
+        id: messageID,
+        sessionID,
+        prompt,
+        delivery: "overnight",
+        resume: false,
+      })
+
+      expect(retried).toMatchObject({ id: messageID, prompt: { text: "Historical overnight prompt" } })
+      expect(yield* admitted(messageID)).toMatchObject({ delivery: "overnight" })
+    }),
+  )
+
+  it.effect("promotes overnight inputs one at a time in admission order", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const { db } = yield* Database.Service
+      const session = yield* SessionV2.Service
+      const events = yield* EventV2.Service
+      const first = yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Overnight first" }),
+        delivery: "overnight",
+        resume: false,
+      })
+      const second = yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Overnight second" }),
+        delivery: "overnight",
+        resume: false,
+      })
+
+      expect(yield* SessionInput.promoteNextOvernight(db, events, sessionID)).toBe(true)
+      expect(yield* admitted(first.id)).toHaveProperty("promotedSeq")
+      expect(yield* admitted(second.id)).not.toHaveProperty("promotedSeq")
+      expect(yield* session.messages({ sessionID })).toMatchObject([
+        { id: first.id, type: "user", text: "Overnight first" },
+      ])
+
+      expect(yield* SessionInput.promoteNextOvernight(db, events, sessionID)).toBe(true)
+      expect(yield* admitted(second.id)).toHaveProperty("promotedSeq")
+      expect(yield* SessionInput.promoteNextOvernight(db, events, sessionID)).toBe(false)
+    }),
+  )
+
+  it.effect("does not promote queued or steering input as overnight", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const { db } = yield* Database.Service
+      const session = yield* SessionV2.Service
+      const events = yield* EventV2.Service
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Steer me" }),
+        resume: false,
+      })
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Queue me" }),
+        delivery: "queue",
+        resume: false,
+      })
+
+      expect(yield* SessionInput.promoteNextOvernight(db, events, sessionID)).toBe(false)
+      expect(yield* session.messages({ sessionID })).toEqual([])
+      expect(yield* SessionInput.hasPending(db, sessionID, "steer")).toBe(true)
+      expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(true)
+    }),
+  )
+
   it.effect("rejects reuse of one globally unique message ID across sessions", () =>
     Effect.gen(function* () {
       yield* setup
