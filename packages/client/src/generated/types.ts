@@ -398,7 +398,7 @@ export type SessionsPromptInput = {
         readonly source?: { readonly start: number; readonly end: number; readonly text: string }
       }>
     }
-    readonly delivery?: "steer" | "queue" | null
+    readonly delivery?: "steer" | "queue" | "overnight" | null
     readonly resume?: boolean | null
   }["id"]
   readonly prompt: {
@@ -416,7 +416,7 @@ export type SessionsPromptInput = {
         readonly source?: { readonly start: number; readonly end: number; readonly text: string }
       }>
     }
-    readonly delivery?: "steer" | "queue" | null
+    readonly delivery?: "steer" | "queue" | "overnight" | null
     readonly resume?: boolean | null
   }["prompt"]
   readonly delivery?: {
@@ -434,7 +434,7 @@ export type SessionsPromptInput = {
         readonly source?: { readonly start: number; readonly end: number; readonly text: string }
       }>
     }
-    readonly delivery?: "steer" | "queue" | null
+    readonly delivery?: "steer" | "queue" | "overnight" | null
     readonly resume?: boolean | null
   }["delivery"]
   readonly resume?: {
@@ -452,7 +452,7 @@ export type SessionsPromptInput = {
         readonly source?: { readonly start: number; readonly end: number; readonly text: string }
       }>
     }
-    readonly delivery?: "steer" | "queue" | null
+    readonly delivery?: "steer" | "queue" | "overnight" | null
     readonly resume?: boolean | null
   }["resume"]
 }
@@ -476,7 +476,7 @@ export type SessionsPromptOutput = {
         readonly source?: { readonly start: number; readonly end: number; readonly text: string }
       }>
     }
-    readonly delivery: "steer" | "queue"
+    readonly delivery: "steer" | "queue" | "overnight"
     readonly timeCreated: number
     readonly promotedSeq?: number
   }
@@ -747,7 +747,7 @@ export type SessionsHistoryOutput = {
               readonly source?: { readonly start: number; readonly end: number; readonly text: string }
             }>
           }
-          readonly delivery: "steer" | "queue"
+          readonly delivery: "steer" | "queue" | "overnight"
         }
       }
     | {
@@ -774,7 +774,7 @@ export type SessionsHistoryOutput = {
               readonly source?: { readonly start: number; readonly end: number; readonly text: string }
             }>
           }
-          readonly delivery: "steer" | "queue"
+          readonly delivery: "steer" | "queue" | "overnight"
         }
       }
     | {
@@ -1205,7 +1205,7 @@ export type SessionsEventsOutput =
             readonly source?: { readonly start: number; readonly end: number; readonly text: string }
           }>
         }
-        readonly delivery: "steer" | "queue"
+        readonly delivery: "steer" | "queue" | "overnight"
       }
     }
   | {
@@ -1232,7 +1232,7 @@ export type SessionsEventsOutput =
             readonly source?: { readonly start: number; readonly end: number; readonly text: string }
           }>
         }
-        readonly delivery: "steer" | "queue"
+        readonly delivery: "steer" | "queue" | "overnight"
       }
     }
   | {
