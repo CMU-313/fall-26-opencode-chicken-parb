@@ -2415,6 +2415,7 @@ describe("SessionRunnerLLM", () => {
       })
 
       expect(userTexts(requests[0]!)).toEqual(["Overnight work"])
+      expect(yield* SessionInput.hasPending(db, sessionID, "overnight")).toBe(false)
       expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(true)
 
       yield* Deferred.succeed(streamGate, undefined)
@@ -2471,6 +2472,8 @@ describe("SessionRunnerLLM", () => {
         prompt: Prompt.make({ text: "Queued during overnight continuation" }),
         delivery: "queue",
       })
+      expect(userTexts(requests[0]!)).toEqual(["Overnight work"])
+      expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(true)
       yield* Deferred.succeed(streamGate, undefined)
       yield* Fiber.join(first)
       streamGate = undefined
@@ -2489,6 +2492,7 @@ describe("SessionRunnerLLM", () => {
       yield* setup
       overnightStartHour = 0
       const session = yield* SessionV2.Service
+      const { db } = yield* Database.Service
       yield* session.prompt({
         sessionID,
         prompt: Prompt.make({ text: "Overnight first" }),
@@ -2530,6 +2534,9 @@ describe("SessionRunnerLLM", () => {
         prompt: Prompt.make({ text: "Queued during overnight" }),
         delivery: "queue",
       })
+      expect(userTexts(requests[0]!)).toEqual(["Overnight first"])
+      expect(yield* SessionInput.hasPending(db, sessionID, "queue")).toBe(true)
+      expect(yield* SessionInput.hasPending(db, sessionID, "overnight")).toBe(true)
       yield* Deferred.succeed(streamGate, undefined)
       yield* Fiber.join(first)
       streamGate = undefined
