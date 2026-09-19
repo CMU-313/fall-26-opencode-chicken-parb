@@ -404,6 +404,9 @@ const layer = Layer.effect(
         }
 
         if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
+          for (const file of yield* ConfigPaths.files("config", ctx.directory, ctx.worktree).pipe(Effect.orDie)) {
+            yield* merge(file, yield* loadFile(file, authEnv), "local")
+          }
           for (const file of yield* ConfigPaths.files("opencode", ctx.directory, ctx.worktree).pipe(Effect.orDie)) {
             yield* merge(file, yield* loadFile(file, authEnv), "local")
           }
@@ -623,13 +626,26 @@ const layer = Layer.effect(
       )
     })
 
+    const writeConfigFile = Effect.fn("Config.writeConfigFile")(function* (file: string, patch: Info) {
+      const before = (yield* readConfigFile(file)) ?? "{}"
+      if (file.endsWith(".jsonc")) {
+        const updated = patchJsonc(before, patch)
+        const changed = updated !== before
+        if (changed) yield* fs.writeFileString(file, updated).pipe(Effect.orDie)
+        return { info: ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(updated, file), file), changed }
+      }
+      const existing = ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(before, file), file)
+      const merged = mergeDeep(writable(existing), patch)
+      const serialized = JSON.stringify(merged, null, 2)
+      const changed = serialized !== before
+      if (changed) yield* fs.writeFileString(file, serialized).pipe(Effect.orDie)
+      return { info: merged, changed }
+    })
+
     const update = Effect.fn("Config.update")(function* (config: Info) {
-      const dir = yield* InstanceState.directory
-      const file = path.join(dir, "config.json")
-      const existing = yield* loadFile(file)
-      yield* fs
-        .writeFileString(file, JSON.stringify(mergeDeep(writable(existing), writable(config)), null, 2))
-        .pipe(Effect.orDie)
+      const ctx = yield* InstanceState.context
+      const base = ctx.worktree && ctx.worktree !== "/" ? ctx.worktree : ctx.directory
+      yield* writeConfigFile(path.join(base, "config.json"), writable(config))
     })
 
     const invalidate = Effect.fn("Config.invalidate")(function* () {
@@ -637,28 +653,9 @@ const layer = Layer.effect(
     })
 
     const updateGlobal = Effect.fn("Config.updateGlobal")(function* (config: Info) {
-      const file = globalConfigFile()
-      const before = (yield* readConfigFile(file)) ?? "{}"
-      const patch = writableGlobal(config)
-
-      let next: Info
-      let changed: boolean
-      if (!file.endsWith(".jsonc")) {
-        const existing = ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(before, file), file)
-        const merged = mergeDeep(writable(existing), patch)
-        const serialized = JSON.stringify(merged, null, 2)
-        changed = serialized !== before
-        if (changed) yield* fs.writeFileString(file, serialized).pipe(Effect.orDie)
-        next = merged
-      } else {
-        const updated = patchJsonc(before, patch)
-        next = ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(updated, file), file)
-        changed = updated !== before
-        if (changed) yield* fs.writeFileString(file, updated).pipe(Effect.orDie)
-      }
-
-      if (changed) yield* invalidate()
-      return { info: next, changed }
+      const result = yield* writeConfigFile(globalConfigFile(), writableGlobal(config))
+      if (result.changed) yield* invalidate()
+      return result
     })
 
     return Service.of({
