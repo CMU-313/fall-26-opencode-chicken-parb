@@ -387,14 +387,15 @@ const layer = Layer.effect(
     const run = Effect.fn("SessionRunner.run")(function* (input: {
       readonly sessionID: SessionSchema.ID
       readonly force: boolean
-      readonly overnightStartHour?: number
     }) {
+      const configEntries = yield* config.entries()
+      const overnightStartHour = Config.latest(configEntries, "overnight")?.start_hour
       const hasSteer = yield* SessionInput.hasPending(db, input.sessionID, "steer")
       const hasQueue = hasSteer ? false : yield* SessionInput.hasPending(db, input.sessionID, "queue")
       const isOvernightWindowOpen = () => {
-        if (input.overnightStartHour === undefined) return false
+        if (overnightStartHour === undefined) return false
         const now = new Date()
-        return now.getHours() >= input.overnightStartHour
+        return now.getHours() >= overnightStartHour
       }
       const hasOvernight =
         hasSteer || hasQueue

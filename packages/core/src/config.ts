@@ -87,6 +87,18 @@ export class Info extends Schema.Class<Info>("Config.Info")({
   compaction: ConfigCompaction.Info.pipe(Schema.optional).annotate({
     description: "Conversation compaction behavior",
   }),
+  overnight: Schema.Struct({
+    start_hour: Schema.Number.pipe(
+      Schema.int(),
+      Schema.greaterThanOrEqualTo(0),
+      Schema.lessThanOrEqualTo(23),
+      Schema.optional,
+    ),
+  })
+    .pipe(Schema.optional)
+    .annotate({
+      description: "Overnight queue processing configuration",
+    }),
   skills: Schema.String.pipe(Schema.Array, Schema.optional).annotate({
     description: "Additional paths or URLs to discover skills from",
   }),
