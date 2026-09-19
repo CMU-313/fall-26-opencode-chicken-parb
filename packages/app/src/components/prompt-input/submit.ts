@@ -49,6 +49,8 @@ type FollowupSendInput = {
   messageID?: string
   optimisticBusy?: boolean
   before?: () => Promise<boolean> | boolean
+  /** Delivery mode: "steer" (immediate), "queue" (after current turn), or "overnight" (deferred until overnight window). */
+  delivery?: "steer" | "queue" | "overnight"
 }
 
 const draftText = (prompt: Prompt) => prompt.map((part) => ("content" in part ? part.content : "")).join("")
@@ -196,6 +198,7 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
             ]
           : [],
       ),
+      delivery: input.delivery,
     })
     return true
   } catch (err) {

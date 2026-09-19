@@ -88,12 +88,7 @@ export class Info extends Schema.Class<Info>("Config.Info")({
     description: "Conversation compaction behavior",
   }),
   overnight: Schema.Struct({
-    start_hour: Schema.Number.pipe(
-      Schema.int(),
-      Schema.greaterThanOrEqualTo(0),
-      Schema.lessThanOrEqualTo(23),
-      Schema.optional,
-    ),
+    start_hour: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 23 })).pipe(Schema.optional),
   })
     .pipe(Schema.optional)
     .annotate({
