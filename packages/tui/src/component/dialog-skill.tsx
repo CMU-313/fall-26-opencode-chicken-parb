@@ -5,6 +5,7 @@ import { useDialog } from "../ui/dialog"
 import { useSDK } from "../context/sdk"
 import { useTheme } from "../context/theme"
 import { errorMessage } from "../util/error"
+import * as fuzzysort from "fuzzysort"
 
 export type DialogSkillProps = {
   onSelect: (skill: string) => void
@@ -17,6 +18,7 @@ export function DialogSkill(props: DialogSkillProps) {
   dialog.setSize("large")
 
   const [loadError, setLoadError] = createSignal<unknown>()
+  const [query, setQuery] = createSignal("")
 
   const [skills] = createResource(() =>
     sdk.client.app
@@ -36,16 +38,19 @@ export function DialogSkill(props: DialogSkillProps) {
     if (showError()) return []
     const list = skills() ?? []
     const maxWidth = Math.max(0, ...list.map((s) => s.name.length))
-    return list.map((skill) => ({
-      title: skill.name.padEnd(maxWidth),
-      description: skill.description?.replace(/\s+/g, " ").trim(),
-      value: skill.name,
-      category: "Skills",
-      onSelect: () => {
-        props.onSelect(skill.name)
-        dialog.clear()
-      },
-    }))
+    return filterSkills(
+      list.map((skill) => ({
+        title: skill.name.padEnd(maxWidth),
+        description: skill.description?.replace(/\s+/g, " ").trim(),
+        value: skill.name,
+        category: "Skills",
+        onSelect: () => {
+          props.onSelect(skill.name)
+          dialog.clear()
+        },
+      })),
+      query(),
+    )
   })
 
   return (
@@ -53,6 +58,8 @@ export function DialogSkill(props: DialogSkillProps) {
       title="Skills"
       placeholder="Search skills..."
       options={options()}
+      onFilter={setQuery}
+      skipFilter={true}
       renderFilter={!showError()}
       locked={showError()}
       emptyView={
@@ -67,4 +74,12 @@ export function DialogSkill(props: DialogSkillProps) {
       }
     />
   )
+}
+
+// Match on the skill name and its description so a skill can be found by what it does,
+// not only by what it is called.
+export function filterSkills<T extends { title: string; description?: string }>(options: T[], query: string) {
+  const needle = query.trim()
+  if (!needle) return options
+  return fuzzysort.go(needle, options, { keys: ["title", "description"] }).map((result) => result.obj)
 }
