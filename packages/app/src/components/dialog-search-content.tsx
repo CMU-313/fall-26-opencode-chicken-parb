@@ -7,6 +7,11 @@ import { useFile } from "@/context/file"
 import { useLanguage } from "@/context/language"
 import { useSDK } from "@/context/sdk"
 import { createCommandPaletteFileOpener } from "./command-palette"
+import {
+  findTextSearchLimitParam,
+  mapFindTextSearchResults,
+  shouldRunFindTextSearch,
+} from "./find-text-search"
 
 export function DialogSearchContent(props: { onOpenFile?: (path: string) => void }) {
   const sdk = useSDK()
@@ -16,18 +21,10 @@ export function DialogSearchContent(props: { onOpenFile?: (path: string) => void
   const openFile = createCommandPaletteFileOpener(props.onOpenFile)
 
   const items = async (text: string) => {
-    const pattern = text.trim()
-    if (!pattern) return []
+    if (!shouldRunFindTextSearch(text)) return []
     return sdk()
-      .client.find.text({ pattern, limit: "25" })
-      .then((result) =>
-        (result.data ?? []).map((match) => ({
-          id: `${match.path.text}:${match.line_number}:${match.absolute_offset}`,
-          path: match.path.text,
-          line: match.line_number,
-          text: match.lines.text.trim(),
-        })),
-      )
+      .client.find.text({ pattern: text.trim(), limit: findTextSearchLimitParam() })
+      .then((result) => mapFindTextSearchResults(result.data ?? []))
       .catch(() => [])
   }
 
