@@ -265,6 +265,13 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     )
   }
 
+  const searchFileContent = () => {
+    void openDialog(
+      () => import("@/components/dialog-search-content"),
+      (x) => dialog.show(() => <x.DialogSearchContent onOpenFile={showAllFiles} />),
+    )
+  }
+
   const closeTab = () => {
     const tab = closableTab()
     if (!tab) return
@@ -509,6 +516,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
         keybind: "mod+p",
         slash: "open",
         onSelect: openFile,
+      }),
+      fileCommand({
+        id: "file.search-content",
+        title: language.t("session.header.searchFiles"),
+        keybind: "mod+shift+f",
+        onSelect: searchFileContent,
       }),
       tab &&
         fileCommand({
