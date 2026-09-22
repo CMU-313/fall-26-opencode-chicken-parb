@@ -10,7 +10,7 @@ const tui: TuiPlugin = async (api) => {
     slots: {
       app_bottom() {
         return (
-          <box paddingLeft={2} paddingTop={1} flexShrink={0}>
+          <box>
             <text
             fg={api.theme.current.accent}
             onMouseUp={() => {

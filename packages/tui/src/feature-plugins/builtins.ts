@@ -10,8 +10,8 @@ import SidebarTodo from "./sidebar/todo"
 import DiffViewer from "./system/diff-viewer"
 import Notifications from "./system/notifications"
 import PluginManager from "./system/plugins"
+import ThemeButton from "./system/theme-button"
 import WhichKey from "./system/which-key"
-import ThemeButton from "./system/theme_button"
 
 export type BuiltinTuiPlugin = Omit<TuiPluginModule, "id"> & {
   id: string
@@ -31,6 +31,7 @@ export function createBuiltinPlugins(options: { experimentalEventSystem: boolean
     SidebarFooter,
     Notifications,
     PluginManager,
+    ThemeButton,
     WhichKey,
     DiffViewer,
   ]
