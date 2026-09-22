@@ -2,6 +2,10 @@ import { useNavigate } from "@solidjs/router"
 import { useCommand, type CommandOption } from "@/context/command"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { previewSelectedLines } from "@opencode-ai/session-ui/pierre/selection-bridge"
+import {
+  FILE_SEARCH_CONTENT_COMMAND_ID,
+  FILE_SEARCH_CONTENT_KEYBIND,
+} from "./file-search-content-command"
 import { useFile, selectionFromLines, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
@@ -265,6 +269,13 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     )
   }
 
+  const searchFileContent = () => {
+    void openDialog(
+      () => import("@/components/dialog-search-content"),
+      (x) => dialog.show(() => <x.DialogSearchContent onOpenFile={showAllFiles} />),
+    )
+  }
+
   const closeTab = () => {
     const tab = closableTab()
     if (!tab) return
@@ -509,6 +520,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
         keybind: "mod+p",
         slash: "open",
         onSelect: openFile,
+      }),
+      fileCommand({
+        id: FILE_SEARCH_CONTENT_COMMAND_ID,
+        title: language.t("session.header.searchFiles"),
+        keybind: FILE_SEARCH_CONTENT_KEYBIND,
+        onSelect: searchFileContent,
       }),
       tab &&
         fileCommand({

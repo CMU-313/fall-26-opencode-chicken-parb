@@ -7896,6 +7896,7 @@ export type FindTextData = {
     directory?: string
     workspace?: string
     pattern: string
+    limit?: string
   }
   url: "/find"
 }
