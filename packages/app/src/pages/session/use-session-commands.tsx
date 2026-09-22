@@ -2,6 +2,10 @@ import { useNavigate } from "@solidjs/router"
 import { useCommand, type CommandOption } from "@/context/command"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { previewSelectedLines } from "@opencode-ai/session-ui/pierre/selection-bridge"
+import {
+  FILE_SEARCH_CONTENT_COMMAND_ID,
+  FILE_SEARCH_CONTENT_KEYBIND,
+} from "./file-search-content-command"
 import { useFile, selectionFromLines, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
@@ -518,9 +522,9 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
         onSelect: openFile,
       }),
       fileCommand({
-        id: "file.search-content",
+        id: FILE_SEARCH_CONTENT_COMMAND_ID,
         title: language.t("session.header.searchFiles"),
-        keybind: "mod+shift+f",
+        keybind: FILE_SEARCH_CONTENT_KEYBIND,
         onSelect: searchFileContent,
       }),
       tab &&
