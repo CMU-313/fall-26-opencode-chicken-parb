@@ -645,7 +645,8 @@ const layer = Layer.effect(
     const update = Effect.fn("Config.update")(function* (config: Info) {
       const ctx = yield* InstanceState.context
       const base = ctx.worktree && ctx.worktree !== "/" ? ctx.worktree : ctx.directory
-      yield* writeConfigFile(path.join(base, "config.json"), writable(config))
+      const result = yield* writeConfigFile(path.join(base, "config.json"), writable(config))
+      if (result.changed) yield* InstanceState.invalidate(state)
     })
 
     const invalidate = Effect.fn("Config.invalidate")(function* () {
