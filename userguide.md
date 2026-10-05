@@ -1,4 +1,4 @@
-This file descirbes the changes made to the opencode repository as part of the project 2 requirements. 
+This file describes the changes made to the opencode repository as part of the project 2 requirements. 
 
 Global Search: The global search feature allows a user to search across all files in a project, with a highlighted line and line number being returned. The search dialouge boxes limits these returns to 25, so even common terms don't have unreasonable amounts of returned results. A user can also activate global search with Aditionally, if the user calls the search API directly, they can specify their custom limit: 
 
@@ -18,7 +18,12 @@ Always Allow Bypass: You can now edit the config.json file directly in Opencode'
 
 Tests: Ensures the config file changes as expected, and that these settings remain constant across new sessions. Ensures current sessions reload their config files. This test is sufficient because the feature only edits the config.json file and has no side effects.
 
-packages/opencode/src/config/config.test.ts
+packages/opencode/test/config/config.test.ts
+
+Theme Button on TUI: There is now a dedicated, on-screen button on the TUI for changing the active theme. 
+
+Tests: One test checks that the theme-button is registered as a built-in plugin. Another test checks that, when the theme button is clicked, the same theme selection window is opened as when /themes is used. Latter test also checks that the theme is correctly rendered in, when selected.
+Tests are located in: packages/tui/test/feature-plugins/theme-button.test.tsx
 
 
 ## Skill Picker Search and Filtering
