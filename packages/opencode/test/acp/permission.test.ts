@@ -176,7 +176,7 @@ describe("acp permissions", () => {
       },
       options: [
         { optionId: "once", kind: "allow_once", name: "Allow once" },
-        { optionId: "always", kind: "allow_always", name: "Always allow" },
+        { optionId: "always", kind: "allow_always", name: "Allow always" },
         { optionId: "reject", kind: "reject_once", name: "Reject" },
       ],
     })
