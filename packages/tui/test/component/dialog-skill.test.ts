@@ -17,8 +17,18 @@ describe("dialog skill filter", () => {
     expect(titles(filterSkills(skills, "pdf"))).toEqual(["pdf-extract"])
   })
 
+  test("matches skill names fuzzily and ignores case", () => {
+    expect(titles(filterSkills(skills, "PDext"))).toEqual(["pdf-extract"])
+  })
+
   test("filters by skill description", () => {
     expect(titles(filterSkills(skills, "production"))).toEqual(["deploy-worker"])
+  })
+
+  test("returns every skill that matches by name or description", () => {
+    const options = [...skills, { title: "merge-docs    ", description: "Combine several PDF files into one" }]
+    // Results are ranked by match quality, so only the set of matches is part of the contract.
+    expect(titles(filterSkills(options, "pdf")).toSorted()).toEqual(["merge-docs", "pdf-extract"])
   })
 
   test("restores the full list for an empty query", () => {
@@ -31,6 +41,8 @@ describe("dialog skill filter", () => {
   })
 
   test("tolerates skills without a description", () => {
-    expect(titles(filterSkills([{ title: "pdf-extract" }], "pdf"))).toEqual(["pdf-extract"])
+    const options = [{ title: "scratchpad    " }, ...skills]
+    expect(titles(filterSkills(options, "production"))).toEqual(["deploy-worker"])
+    expect(titles(filterSkills(options, "scratch"))).toEqual(["scratchpad"])
   })
 })
