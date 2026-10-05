@@ -1733,6 +1733,7 @@ export class Find extends HeyApiClient {
       directory?: string
       workspace?: string
       pattern: string
+      limit?: string
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -1744,6 +1745,7 @@ export class Find extends HeyApiClient {
             { in: "query", key: "directory" },
             { in: "query", key: "workspace" },
             { in: "query", key: "pattern" },
+            { in: "query", key: "limit" },
           ],
         },
       ],

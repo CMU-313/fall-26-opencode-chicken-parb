@@ -902,6 +902,72 @@ it.instance("updates config and writes to file", () =>
   }),
 )
 
+it.instance("loads project config.json but opencode.json takes precedence", () =>
+  Effect.gen(function* () {
+    const test = yield* TestInstance
+    yield* writeConfigEffect(
+      test.directory,
+      { $schema: "https://opencode.ai/config.json", model: "from/opencode" },
+      "opencode.json",
+    )
+    yield* writeConfigEffect(
+      test.directory,
+      { $schema: "https://opencode.ai/config.json", model: "from/config", username: "from-config" },
+      "config.json",
+    )
+
+    const config = yield* Config.use.get()
+    expect(config.model).toBe("from/opencode")
+    expect(config.username).toBe("from-config")
+  }),
+)
+
+it.instance("round-trips Config.update through the loader", () =>
+  Effect.gen(function* () {
+    yield* Config.Service.use((svc) =>
+      svc.update(ConfigParse.schema(ConfigV1.Info, { model: "round/trip" }, "test:config")),
+    )
+
+    const config = yield* Config.use.get()
+    expect(config.model).toBe("round/trip")
+  }),
+)
+
+it.instance("Config.update is visible after config was already loaded", () =>
+  Effect.gen(function* () {
+    const before = yield* Config.use.get()
+    expect(before.model).toBeUndefined()
+
+    yield* Config.Service.use((svc) =>
+      svc.update(ConfigParse.schema(ConfigV1.Info, { model: "after/load" }, "test:config")),
+    )
+
+    const after = yield* Config.use.get()
+    expect(after.model).toBe("after/load")
+  }),
+)
+
+it.instance("Config.update merges into existing config.json", () =>
+  Effect.gen(function* () {
+    const test = yield* TestInstance
+    yield* writeConfigEffect(
+      test.directory,
+      { $schema: "https://opencode.ai/config.json", model: "keep/model", username: "keep-user" },
+      "config.json",
+    )
+
+    yield* Config.Service.use((svc) =>
+      svc.update(ConfigParse.schema(ConfigV1.Info, { username: "new-user" }, "test:config")),
+    )
+
+    const written = yield* FSUtil.use.readJson(path.join(test.directory, "config.json"))
+    expect(written).toMatchObject({ model: "keep/model", username: "new-user" })
+    const config = yield* Config.use.get()
+    expect(config.model).toBe("keep/model")
+    expect(config.username).toBe("new-user")
+  }),
+)
+
 it.instance("gets config directories", () =>
   Effect.gen(function* () {
     const dirs = yield* Config.use.directories()

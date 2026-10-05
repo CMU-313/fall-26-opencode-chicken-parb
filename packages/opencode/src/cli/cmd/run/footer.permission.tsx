@@ -145,7 +145,7 @@ export function RunPermissionBody(props: {
   const busy = createMemo(() => state().submitting)
   const title = createMemo(() => {
     if (state().stage === "always") {
-      return "Always allow"
+      return "Allow always"
     }
 
     if (state().stage === "reject") {
