@@ -12,3 +12,11 @@ Limit: packages/opencode/test/server/httpapi-find-text-query.test.ts
 
 API: packages/opencode/test/server/httpapi-file-find-text.test.ts
 packages/opencode/test/server/httpapi-file.test.ts
+
+
+Always Allow Bypass: You can now edit the config.json file directly in Opencode's UI.
+
+Tests: Ensures the config file changes as expected, and that these settings remain constant across new sessions. Ensures current sessions reload their config files. This test is sufficient because the feature only edits the config.json file and has no side effects.
+
+packages/opencode/src/config/config.test.ts
+
