@@ -1,6 +1,6 @@
 This file describes the changes made to the opencode repository as part of the project 2 requirements. 
 
-Global Search: The global search feature allows a user to search across all files in a project, with a highlighted line and line number being returned. The search dialouge boxes limits these returns to 25, so even common terms don't have unreasonable amounts of returned results. A user can also activate global search with Aditionally, if the user calls the search API directly, they can specify their custom limit: 
+**Rohan** Global Search: The global search feature allows a user to search across all files in a project, with a highlighted line and line number being returned. The search dialouge boxes limits these returns to 25, so even common terms don't have unreasonable amounts of returned results. A user can also activate global search with Aditionally, if the user calls the search API directly, they can specify their custom limit: 
 
 Tests: This feature can be tested along 4 prongs - search helpers, command level, query validation, and endpoint. New tests ensure that whitespaces are skipped, files from across the project are returned, and the limiting feature works as intended. These 4 areas are completley exhaustive relative to the changes made in this feature.
 
@@ -14,19 +14,22 @@ API: packages/opencode/test/server/httpapi-file-find-text.test.ts
 packages/opencode/test/server/httpapi-file.test.ts
 
 
-Always Allow Bypass: You can now edit the config.json file directly in Opencode's UI.
 
-Tests: Ensures the config file changes as expected, and that these settings remain constant across new sessions. Ensures current sessions reload their config files. This test is sufficient because the feature only edits the config.json file and has no side effects.
+**Parker** Always Allow Bypass: You can now edit the config.json file directly in Opencode's UI via the /permissions command, cycling between permissions using the arrow keys and space bar (or alternatively clicking via a mouse).
 
-packages/opencode/test/config/config.test.ts
+Tests: Ensures the config file changes as expected and that these settings remain constant across new sessions. Ensures current sessions reload their config files. These tests are sufficient because the feature only edits the config.json file and has no side effects, so testing that the config.json file has changed and is reflected across sessions is sufficient.
 
-Theme Button on TUI: There is now a dedicated, on-screen button on the TUI for changing the active theme. 
+packages/opencode/test/config/config.test.ts (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/opencode/test/config/config.test.ts) (note that most of these are previously existing tests. The commits containing the specific tests I implemented are here: https://github.com/CMU-313/fall-26-opencode-chicken-parb/pull/25/commits)
+
+
+
+**Ashley** Theme Button on TUI: There is now a dedicated, on-screen button on the TUI for changing the active theme. 
 
 Tests: One test checks that the theme-button is registered as a built-in plugin. Another test checks that, when the theme button is clicked, the same theme selection window is opened as when /themes is used. Latter test also checks that the theme is correctly rendered in, when selected.
 Tests are located in: packages/tui/test/feature-plugins/theme-button.test.tsx
 
 
-## Skill Picker Search and Filtering
+## **Batu** Skill Picker Search and Filtering
 
 The `/skills` picker in the terminal UI can be searched. Typing in the picker filters and ranks skills by their name and description, so a skill can be found without scrolling through the whole list.
 
