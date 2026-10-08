@@ -4,14 +4,14 @@ This file describes the changes made to the opencode repository as part of the p
 
 Tests: This feature can be tested along 4 prongs - search helpers, command level, query validation, and endpoint. New tests ensure that whitespaces are skipped, files from across the project are returned, and the limiting feature works as intended. These 4 areas are completley exhaustive relative to the changes made in this feature.
 
-Search helper tests: packages/app/src/components/find-text-search.test.ts
+Search helper tests: packages/app/src/components/find-text-search.test.ts (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/app/src/components/find-text-search.test.ts)
 
-Command: packages/app/src/pages/session/file-search-content-command.test.ts
+Command: packages/app/src/pages/session/file-search-content-command.test.ts (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/app/src/pages/session/file-search-content-command.test.ts)
 
-Limit: packages/opencode/test/server/httpapi-find-text-query.test.ts
+Limit: packages/opencode/test/server/httpapi-find-text-query.test.ts (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/opencode/test/server/httpapi-find-text-query.test.ts)
 
-API: packages/opencode/test/server/httpapi-file-find-text.test.ts
-packages/opencode/test/server/httpapi-file.test.ts
+API: packages/opencode/test/server/httpapi-file-find-text.test.ts (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/opencode/test/server/httpapi-file-find-text.test.ts)
+packages/opencode/test/server/httpapi-file.test.ts (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/opencode/test/server/httpapi-file.test.ts)
 
 
 
@@ -26,7 +26,7 @@ packages/opencode/test/config/config.test.ts (https://github.com/CMU-313/fall-26
 **Ashley** Theme Button on TUI: There is now a dedicated, on-screen button on the TUI for changing the active theme. 
 
 Tests: One test checks that the theme-button is registered as a built-in plugin. Another test checks that, when the theme button is clicked, the same theme selection window is opened as when /themes is used. Latter test also checks that the theme is correctly rendered in, when selected.
-Tests are located in: packages/tui/test/feature-plugins/theme-button.test.tsx
+Tests are located in: packages/tui/test/feature-plugins/theme-button.test.tsx (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/tui/test/feature-plugins/theme-button.test.tsx)
 
 
 ## **Batu** Skill Picker Search and Filtering
@@ -94,7 +94,7 @@ bun test test/component/dialog-skill.test.ts test/cli/tui/dialog-skill.test.tsx
   - an empty or whitespace-only query returns the original list in its original order
   - a query with no match returns nothing
   - skills without a description neither break the search nor hide valid matches
-- `packages/tui/test/cli/tui/dialog-skill.test.tsx` has 5 rendered tests. Each opens the real skill picker the same way `/skills` does, using a fake skill list and the default key bindings, then checks what is drawn on screen:
+- `packages/tui/test/cli/tui/dialog-skill.test.tsx` (https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/tui/test/cli/tui/dialog-skill.test.tsx) has 5 rendered tests. Each opens the real skill picker the same way `/skills` does, using a fake skill list and the default key bindings, then checks what is drawn on screen:
   - with no query, every skill is shown in the original order and Enter selects the first
   - typing a name query narrows the visible list (`pdf`, then `pdf-m`)
   - changing to a description-only query (`production`) replaces the previous results
