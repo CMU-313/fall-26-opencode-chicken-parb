@@ -78,8 +78,30 @@ export function DialogSkill(props: DialogSkillProps) {
 
 // Match on the skill name and its description so a skill can be found by what it does,
 // not only by what it is called.
+//
+// fuzzysort decides what matches, but it scores a skill by its single best field and penalizes
+// long targets (titles are padded to a common width), so a description hit could outrank a name
+// hit. Rank explicitly instead: keyword (contiguous) matches before character-level ones, and the
+// name before the description at each strength. fuzzysort's score orders skills within a tier.
+//
+// The query is normalized before fuzzysort sees it, because its score depends on the literal
+// query: "a  b" scores differently from "a b", and it de-duplicates words before lower-casing,
+// so "pdf PDF" (two words) scores differently from "pdf pdf" (one word).
 export function filterSkills<T extends { title: string; description?: string }>(options: T[], query: string) {
-  const needle = query.trim()
+  const needle = query.trim().replace(/\s+/g, " ").toLowerCase()
   if (!needle) return options
-  return fuzzysort.go(needle, options, { keys: ["title", "description"] }).map((result) => result.obj)
+  const terms = needle.split(" ")
+  const tier = (option: T) => {
+    const title = option.title.toLowerCase()
+    const description = option.description?.toLowerCase() ?? ""
+    if (terms.every((term) => title.includes(term))) return 0
+    if (terms.every((term) => title.includes(term) || description.includes(term))) return 1
+    if (fuzzysort.single(needle, option.title)) return 2
+    return 3
+  }
+  return fuzzysort
+    .go(needle, options, { keys: ["title", "description"] })
+    .map((result) => ({ option: result.obj, score: result.score, tier: tier(result.obj) }))
+    .toSorted((a, b) => a.tier - b.tier || b.score - a.score)
+    .map((result) => result.option)
 }
