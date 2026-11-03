@@ -35,9 +35,8 @@ const layer = LayerNode.compile(LayerNode.group([Config.node, FSUtil.node, Env.n
   [httpClient, Layer.succeed(HttpClient.HttpClient, unexpectedHttp)],
 ])
 
-// Run a body in a fresh temporary project with the real Config service. A new
-// project per sample keeps generated inputs isolated from one another.
-const runInProject = <A, E, R>(body: (dir: string) => Effect.Effect<A, E, R>) =>
+// Create isolated project for each sample
+const runInProject = <A, E>(body: (dir: string) => Effect.Effect<A, E, Layer.Success<typeof layer>>) =>
   Effect.runPromise(provideTmpdirInstance(body).pipe(Effect.scoped, Effect.provide(layer)))
 
 const setPermission = (key: string, action: ConfigPermissionV1.Action) =>
