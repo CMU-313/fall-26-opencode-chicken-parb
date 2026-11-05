@@ -34,6 +34,7 @@ describe("find text search helpers", () => {
         path: "src/main.ts",
         line: 12,
         text: "const needle = true",
+        matches: [],
       },
     ])
   })
