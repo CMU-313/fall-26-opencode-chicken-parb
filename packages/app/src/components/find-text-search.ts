@@ -106,6 +106,11 @@ export function mapFindTextSearchResults(matches: FindTextMatch[]): FindTextSear
   })
 }
 
+/** The entries the search dialog lists for an API response; an empty result shows the "no results" message. */
+export function findTextSearchEntries(matches: FindTextMatch[], language?: FindTextSearchLanguage) {
+  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language)
+}
+
 export function findTextSearchLanguage(path: string) {
   const name = path.split("/").pop() ?? ""
   const dot = name.lastIndexOf(".")

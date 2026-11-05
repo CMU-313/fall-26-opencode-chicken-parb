@@ -15,11 +15,10 @@ import { createCommandPaletteFileOpener } from "./command-palette"
 import {
   FIND_TEXT_SEARCH_LANGUAGES,
   type FindTextSearchLanguage,
-  filterFindTextSearchResults,
+  findTextSearchEntries,
   findTextSearchLimitParam,
   findTextSearchSegments,
   findTextSearchVariables,
-  mapFindTextSearchResults,
   shouldRunFindTextSearch,
 } from "./find-text-search"
 
@@ -46,7 +45,7 @@ export function DialogSearchContent(props: { onOpenFile?: (path: string) => void
     if (!shouldRunFindTextSearch(text)) return []
     return sdk()
       .client.find.text({ pattern: text.trim(), limit: findTextSearchLimitParam() })
-      .then((result) => filterFindTextSearchResults(mapFindTextSearchResults(result.data ?? []), selected))
+      .then((result) => findTextSearchEntries(result.data ?? [], selected))
       .catch(() => [])
   }
 
