@@ -774,6 +774,8 @@ export const dict = {
   "session.new.lastModified": "Oxirgi tahrirlangan",
   "session.header.search.placeholder": "Qidiruv {{project}}",
   "session.header.searchFiles": "Fayllarni qidirish",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Ochish",
   "session.header.open.action": "{{app}}-ni oching",
   "session.header.open.ariaLabel": "{{app}} da oching",

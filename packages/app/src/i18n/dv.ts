@@ -781,6 +781,8 @@ export const dict = {
   "session.new.lastModified": "އެންމެ ފަހުން ބަދަލުކުރީ",
   "session.header.search.placeholder": "{{project}} ހޯދުން",
   "session.header.searchFiles": "ފައިލްތައް ހޯދުން",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "ހުޅުވާފައި އިން",
   "session.header.open.action": "{{app}} ހުޅުވާލާށެވެ",
   "session.header.open.ariaLabel": "{{app}} ގައި ހުޅުވާފައި ހުރެއެވެ",

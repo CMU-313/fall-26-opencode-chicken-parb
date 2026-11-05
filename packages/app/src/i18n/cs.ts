@@ -775,6 +775,8 @@ export const dict = {
   "session.new.lastModified": "Naposledy upraveno",
   "session.header.search.placeholder": "Hledat {{project}}",
   "session.header.searchFiles": "Hledat soubory",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Otevřít v",
   "session.header.open.action": "Otevřít {{app}}",
   "session.header.open.ariaLabel": "Otevřít v {{app}}",

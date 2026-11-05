@@ -756,6 +756,8 @@ export const dict = {
   "session.new.lastModified": "መጨረሻ የተሻሻለው",
   "session.header.search.placeholder": "ፍለጋ {{project}}",
   "session.header.searchFiles": "ፋይሎችን ይፈልጉ",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "ክፍት ውስጥ",
   "session.header.open.action": "ክፈት {{app}}",
   "session.header.open.ariaLabel": "በ{{app}} ውስጥ ክፈት",

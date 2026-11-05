@@ -775,6 +775,8 @@ export const dict = {
   "session.new.lastModified": "Последна промяна",
   "session.header.search.placeholder": "Търсене {{project}}",
   "session.header.searchFiles": "Търсене на файлове",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Отвори в",
   "session.header.open.action": "Отворете {{app}}",
   "session.header.open.ariaLabel": "Отворете в {{app}}",

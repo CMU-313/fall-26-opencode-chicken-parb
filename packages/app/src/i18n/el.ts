@@ -777,6 +777,8 @@ export const dict = {
   "session.new.lastModified": "Τελευταία τροποποίηση",
   "session.header.search.placeholder": "Αναζήτηση {{project}}",
   "session.header.searchFiles": "Αναζήτηση αρχείων",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Άνοιγμα σε",
   "session.header.open.action": "Άνοιγμα {{app}}",
   "session.header.open.ariaLabel": "Άνοιγμα σε {{app}}",

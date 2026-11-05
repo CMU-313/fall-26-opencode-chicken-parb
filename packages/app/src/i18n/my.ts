@@ -777,6 +777,8 @@ export const dict = {
   "session.new.lastModified": "နောက်ဆုံးမွမ်းမံထားသည်။",
   "session.header.search.placeholder": "{{project}} ကိုရှာပါ။",
   "session.header.searchFiles": "ဖိုင်များကို ရှာဖွေပါ။",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "ဖွင့်ပါ။",
   "session.header.open.action": "{{app}} ကိုဖွင့်ပါ။",
   "session.header.open.ariaLabel": "{{app}} တွင် ဖွင့်ပါ။",

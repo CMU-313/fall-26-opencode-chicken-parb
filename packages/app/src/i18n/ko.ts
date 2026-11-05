@@ -516,6 +516,8 @@ export const dict = {
   "session.new.lastModified": "최근 수정",
   "session.header.search.placeholder": "{{project}} 검색",
   "session.header.searchFiles": "파일 검색",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "다음에서 열기",
   "session.header.open.action": "{{app}} 열기",
   "session.header.open.ariaLabel": "{{app}}에서 열기",

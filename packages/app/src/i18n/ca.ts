@@ -778,6 +778,8 @@ export const dict = {
   "session.new.lastModified": "Última modificació",
   "session.header.search.placeholder": "Cerca {{project}}",
   "session.header.searchFiles": "Cerca fitxers",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Obre dins",
   "session.header.open.action": "Obre {{app}}",
   "session.header.open.ariaLabel": "Obert a {{app}}",

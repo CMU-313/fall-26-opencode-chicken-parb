@@ -765,6 +765,8 @@ export const dict = {
   "session.new.lastModified": "Viimati muudetud",
   "session.header.search.placeholder": "Otsi {{project}}",
   "session.header.searchFiles": "Otsige faile",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Ava sisse",
   "session.header.open.action": "Ava {{app}}",
   "session.header.open.ariaLabel": "Avatud kohas {{app}}",

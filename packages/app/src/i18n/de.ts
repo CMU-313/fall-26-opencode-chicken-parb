@@ -650,6 +650,8 @@ export const dict = {
   "session.new.lastModified": "Zuletzt geändert",
   "session.header.search.placeholder": "{{project}} durchsuchen",
   "session.header.searchFiles": "Dateien suchen",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Öffnen in",
   "session.header.open.action": "{{app}} öffnen",
   "session.header.open.ariaLabel": "In {{app}} öffnen",

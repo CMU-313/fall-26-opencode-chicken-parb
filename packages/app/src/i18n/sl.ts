@@ -775,6 +775,8 @@ export const dict = {
   "session.new.lastModified": "Nazadnje spremenjeno",
   "session.header.search.placeholder": "Išči {{project}}",
   "session.header.searchFiles": "Iskanje datotek",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Odpri v",
   "session.header.open.action": "Odprite {{app}}",
   "session.header.open.ariaLabel": "Odpri v {{app}}",
