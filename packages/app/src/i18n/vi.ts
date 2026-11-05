@@ -779,6 +779,8 @@ export const dict = {
   "session.new.lastModified": "Sửa đổi lần cuối",
   "session.header.search.placeholder": "Tìm kiếm {{project}}",
   "session.header.searchFiles": "Tìm kiếm tệp",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Mở trong",
   "session.header.open.action": "Mở {{app}}",
   "session.header.open.ariaLabel": "Mở trong {{app}}",

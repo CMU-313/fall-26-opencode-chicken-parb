@@ -681,6 +681,8 @@ export const dict = {
 
   "session.header.search.placeholder": "Søk i {{project}}",
   "session.header.searchFiles": "Søk etter filer",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Åpne i",
   "session.header.open.action": "Åpne {{app}}",
   "session.header.open.ariaLabel": "Åpne i {{app}}",

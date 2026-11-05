@@ -771,6 +771,8 @@ export const dict: Record<string, string> = {
   "session.new.lastModified": "पछिल्लो पटक परिमार्जन गरिएको",
   "session.header.search.placeholder": "{{project}} खोज्नुहोस्",
   "session.header.searchFiles": "फाइलहरू खोज्नुहोस्",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "मा खोल्नुहोस्",
   "session.header.open.action": "{{app}} खोल्नुहोस्",
   "session.header.open.ariaLabel": "{{app}} मा खोल्नुहोस्",

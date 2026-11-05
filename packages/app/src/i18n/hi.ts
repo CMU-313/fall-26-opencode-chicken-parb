@@ -779,6 +779,8 @@ export const dict = {
   "session.new.lastModified": "अंतिम बार संशोधित",
   "session.header.search.placeholder": "{{project}} खोजें",
   "session.header.searchFiles": "फ़ाइलें खोजें",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "में खोलें",
   "session.header.open.action": "{{app}} खोलें",
   "session.header.open.ariaLabel": "{{app}} में खोलें",

@@ -839,6 +839,8 @@ export const dict = {
 
   "session.header.search.placeholder": "Cari {{project}}",
   "session.header.searchFiles": "Cari berkas",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Buka di",
   "session.header.open.action": "Buka {{app}}",
   "session.header.open.ariaLabel": "Buka di {{app}}",

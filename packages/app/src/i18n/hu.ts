@@ -776,6 +776,8 @@ export const dict = {
   "session.new.lastModified": "Utoljára módosítva",
   "session.header.search.placeholder": "Keresés {{project}}",
   "session.header.searchFiles": "Fájlok keresése",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Nyissa meg",
   "session.header.open.action": "Nyissa meg a {{app}}-t",
   "session.header.open.ariaLabel": "Nyitás {{app}}-ben",
