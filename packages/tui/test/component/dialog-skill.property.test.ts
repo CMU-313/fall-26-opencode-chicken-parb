@@ -255,8 +255,15 @@ describe("dialog skill filter properties", () => {
   // interviews said must not matter (C-5, C-6, O-5, S-3), so the visible list must be identical:
   // same skills in the same order. Repeated terms ("pdf PDF") reach the one place fuzzysort's own
   // case handling differs (it de-duplicates words before lower-casing them).
+  // P5: half the cases are guaranteed to have two or more terms, because extra spaces can only go
+  // between terms there. That is where a search that kept a doubled space reorders results:
+  // fuzzysort scores a query that occurs verbatim, spaces included, above the same words found
+  // apart. With single-term queries taking about half the P4 runs, a mutant that stopped
+  // collapsing repeated spaces survived. More runs for the same reason: the reordering only shows
+  // when two results of the same tier are close in score.
   test("R3: changing letter case or adding spaces leaves the results and their order unchanged", () => {
-    const variant = corpusWithQuery().chain((input) =>
+    const multiTerm = corpusWithQuery().filter((input) => /\S\s+\S/.test(input.query))
+    const variant = FastCheck.oneof(corpusWithQuery(), multiTerm).chain((input) =>
       FastCheck.record({
         skills: FastCheck.constant(input.skills),
         query: FastCheck.constant(input.query),
@@ -274,7 +281,7 @@ describe("dialog skill filter properties", () => {
         const options = toOptions(input.skills)
         expect(names(filterSkills(options, input.retyped))).toEqual(names(filterSkills(options, input.query)))
       }),
-      { numRuns: 1000 },
+      { numRuns: 3000 },
     )
   })
 
@@ -353,19 +360,37 @@ describe("dialog skill filter properties", () => {
   // (3) otherwise, every term's characters appear in order (character-level fuzzy) in the
   // name/title; (4) all other matches, i.e. character-level matches that rely on the description.
   // Kind: invariant
-  // Generator rationale: one or two query terms (2-5 letters, neither contained in the other) and
-  // a filler alphabet with none of the query's letters. Each skill is built to sit in exactly one
-  // tier: (1) the terms inside the name; (2) the terms only in the description, or for two terms
-  // one in the name and one in the description; (3) the terms scattered through the name with
-  // filler between every letter ("depy" -> "d3e7p0y"), so they never appear contiguously; (4) the
-  // same scattering in the description only. Decoys are pure filler. Skills are shuffled, so load
-  // order cannot produce the ranking. Each skill's tier is known from how it was built; the test
-  // never re-derives it with the production rules.
+  // Generator rationale: one or two query terms (2-5 letters, neither a subsequence of the other)
+  // and a filler alphabet with none of the query's letters. Each query term is placed in a skill
+  // independently, at one of four spots: contiguous in the name, contiguous in the description,
+  // scattered through the name with filler between every letter ("depy" -> "d3e7p0y", never
+  // contiguous), or scattered through the description. The skill's tier follows from where its
+  // terms were placed, read straight off R7: (1) every term contiguous in the name; (2) every
+  // term contiguous, some in the description; (3) every term in the name, some scattered;
+  // (4) the rest. Placements are drawn per tier, so every case has skills of all four tiers,
+  // including skills whose terms match at different strengths (one term a keyword in the
+  // description, the other scattered through the name: tier 4). P5: the P4 generator gave every
+  // term of a skill the same spot, so it never built such a skill and a tier check that tested
+  // `some` term instead of `every` term survived (H5). Because no term is a subsequence of
+  // another and filler shares no letter with the query, a term matches only where it was placed.
+  // Skills ranked by their name alone may have no description at all (R8), decoys are pure
+  // filler, and skills are shuffled, so load order cannot produce the ranking. Each skill's tier
+  // is known from how it was built; the test never re-derives it from the skill's text.
   test("R7: keyword matches outrank character-level matches, and name matches outrank description matches", () => {
+    const SPOTS = ["name", "description", "name-scattered", "description-scattered"] as const
+    type Spot = (typeof SPOTS)[number]
+    // R7's tiers, read off where each query term was placed (one spot per term).
+    const tierOf = (spots: Spot[]) => {
+      if (spots.every((spot) => spot === "name")) return 1
+      if (spots.every((spot) => spot === "name" || spot === "description")) return 2
+      if (spots.every((spot) => spot.startsWith("name"))) return 3
+      return 4
+    }
+
     const ranking = FastCheck.integer({ min: 1, max: 2 })
       .chain((count) =>
         FastCheck.uniqueArray(wordOf(LOWER, 2, 5), { minLength: count, maxLength: count }).filter((terms) =>
-          terms.every((term, i) => terms.every((other, j) => i === j || !other.includes(term))),
+          terms.every((term, i) => terms.every((other, j) => i === j || !inOrder(term, other))),
         ),
       )
       .chain((terms) => {
@@ -386,37 +411,46 @@ describe("dialog skill filter properties", () => {
             ([before, core, after]) =>
               [...before, ...(pieces.length ? core.split(separator) : []), ...after].join(separator),
           )
-        const tier = (rank: number, skill: FastCheck.Arbitrary<Skill>) =>
+        // No description, an empty one, or filler prose: for a skill whose terms are all in its name.
+        const unrelated = FastCheck.oneof(
+          among([], " ").map((description): Description => ({ description })),
+          FastCheck.constant<Description>({}),
+        )
+        const skillAt = (spots: Spot[]) =>
+          scattered.chain((spread) => {
+            const pieces = (field: "name" | "description") =>
+              terms.flatMap((term, i) =>
+                spots[i] === field ? [term] : spots[i] === `${field}-scattered` ? [spread[i]] : [],
+              )
+            const description = pieces("description")
+            return FastCheck.tuple(
+              among(pieces("name"), "-"),
+              description.length
+                ? among(description, " ").map((text): Description => ({ description: text }))
+                : unrelated,
+            ).map(([name, rest]): Skill => ({ name, ...rest }))
+          })
+        // Every combination of one spot per term, grouped by the tier it puts a skill in.
+        const placements = terms.reduce<Spot[][]>(
+          (combos) => combos.flatMap((combo) => SPOTS.map((spot) => [...combo, spot])),
+          [[]],
+        )
+        const tier = (rank: number) =>
           FastCheck.array(
-            skill.map((built) => ({ ...built, rank })),
+            FastCheck.constantFrom(...placements.filter((spots) => tierOf(spots) === rank))
+              .chain(skillAt)
+              .map((built) => ({ ...built, rank })),
             { minLength: 1, maxLength: 2 },
           )
-        const descriptionKeyword = FastCheck.record({ name: among([], "-"), description: among(terms, " ") })
 
         return FastCheck.tuple(
-          tier(1, FastCheck.record({ name: among(terms, "-"), description: among([], " ") })),
-          tier(
-            2,
-            terms.length === 2
-              ? FastCheck.oneof(
-                  descriptionKeyword,
-                  FastCheck.record({ name: among([terms[0]], "-"), description: among([terms[1]], " ") }),
-                )
-              : descriptionKeyword,
-          ),
-          tier(
-            3,
-            FastCheck.record({ name: scattered.chain((parts) => among(parts, "-")), description: among([], " ") }),
-          ),
-          tier(
-            4,
-            FastCheck.record({ name: among([], "-"), description: scattered.chain((parts) => among(parts, " ")) }),
-          ),
+          tier(1),
+          tier(2),
+          tier(3),
+          tier(4),
           FastCheck.array(
-            FastCheck.record({ name: among([], "-"), description: among([], " "), rank: FastCheck.constant(0) }),
-            {
-              maxLength: 3,
-            },
+            FastCheck.tuple(among([], "-"), unrelated).map(([name, rest]) => ({ name, ...rest, rank: 0 })),
+            { maxLength: 3 },
           ),
         ).chain((groups) => {
           // Numeric suffixes keep names unique; digits are filler, so they never create a match.
@@ -434,7 +468,8 @@ describe("dialog skill filter properties", () => {
         expect(ranks).toHaveLength(input.skills.filter((skill) => skill.rank > 0).length)
         expect(ranks).toEqual(ranks.toSorted((a, b) => a - b))
       }),
-      { numRuns: 300 },
+      // P5: more runs than in P4, because one spot per term gives far more skill shapes per tier.
+      { numRuns: 1000 },
     )
   })
 
