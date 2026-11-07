@@ -1,0 +1,13 @@
+diff --git a/packages/tui/src/component/dialog-skill.tsx b/packages/tui/src/component/dialog-skill.tsx
+index e26b221..1eeeddf 100644
+--- a/packages/tui/src/component/dialog-skill.tsx
++++ b/packages/tui/src/component/dialog-skill.tsx
+@@ -88,7 +88,7 @@ export function DialogSkill(props: DialogSkillProps) {
+ // query: "a  b" scores differently from "a b", and it de-duplicates words before lower-casing,
+ // so "pdf PDF" (two words) scores differently from "pdf pdf" (one word).
+ export function filterSkills<T extends { title: string; description?: string }>(options: T[], query: string) {
+-  const needle = query.trim().replace(/\s+/g, " ").toLowerCase()
++  const needle = query.trim().replace(/\s+/g, " ")
+   if (!needle) return options
+   const terms = needle.split(" ")
+   const tier = (option: T) => {
