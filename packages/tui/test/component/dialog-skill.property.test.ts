@@ -90,7 +90,8 @@ const textsOf = (skills: Skill[]) =>
 // - one shortened form typed twice ("pdf PDF"): after random casing the copies can differ only
 //   by case, the boundary where a case-insensitive search must still treat them as one word;
 // - initials ("d s" for deploy-service): one-letter terms match many skills at once, so they
-//   stress how the many results are ordered.
+//   stress how the many results are ordered;
+// - a short query (P5, see shortQueryOf).
 // Each is then typed in random case with stray surrounding spaces.
 function queryFor(skills: Skill[]) {
   const shortened = FastCheck.constantFrom(...textsOf(skills))
@@ -110,13 +111,48 @@ function queryFor(skills: Skill[]) {
     FastCheck.constantFrom(...textsOf(skills)).chain((text) => FastCheck.constantFrom(...text.replaceAll(" ", ""))),
     { minLength: 2, maxLength: 3 },
   ).map((letters) => letters.join(" "))
-  return FastCheck.oneof(shortened, shortened, nearMiss, unrelated, twoTerms, repeated, initials)
+  return FastCheck.oneof(shortened, shortened, nearMiss, unrelated, twoTerms, repeated, initials, shortQueryOf(skills))
     .chain((query) =>
       FastCheck.tuple(spaces(2), FastCheck.mixedCase(FastCheck.constant(query)), spaces(2)).map((typed) =>
         typed.join(""),
       ),
     )
     .filter((query) => query.trim() !== "")
+}
+
+// The first keystrokes of most searches (P5), one of:
+// - a fragment: two to four letters exactly as they appear in one word of a name or description
+//   ("dep", "re"), a keyword-level match;
+// - an acronym: the first letters of two or three consecutive words of a name ("pe" for
+//   pdf-extract), the most common character-level match.
+// Short terms are where R7's tiers diverge most: the same two letters can be a keyword in one
+// skill and only spread out, at word starts, in another.
+function shortQueryOf(skills: Skill[]) {
+  const words = textsOf(skills)
+    .flatMap((text) => text.split(/[\s-]+/))
+    .filter((word) => word.length >= 2)
+  const fragment = words.length
+    ? FastCheck.constantFrom(...words).chain((word) =>
+        FastCheck.integer({ min: 0, max: word.length - 2 }).chain((start) =>
+          FastCheck.integer({ min: start + 2, max: Math.min(word.length, start + 4) }).map((end) =>
+            word.slice(start, end),
+          ),
+        ),
+      )
+    : FastCheck.constantFrom(...textsOf(skills))
+  const multiWord = skills.map((skill) => skill.name.split("-")).filter((parts) => parts.length >= 2)
+  if (!multiWord.length) return fragment
+  const acronym = FastCheck.constantFrom(...multiWord).chain((parts) =>
+    FastCheck.integer({ min: 0, max: parts.length - 2 }).chain((start) =>
+      FastCheck.integer({ min: start + 2, max: Math.min(parts.length, start + 3) }).map((end) =>
+        parts
+          .slice(start, end)
+          .map((part) => part[0])
+          .join(""),
+      ),
+    ),
+  )
+  return FastCheck.oneof(fragment, acronym)
 }
 
 const corpusWithQuery = () =>
@@ -139,6 +175,19 @@ const modelMatches = (option: { title: string; description?: string }, query: st
     .every(
       (term) => inOrder(term, option.title.toLowerCase()) || inOrder(term, (option.description ?? "").toLowerCase()),
     )
+
+// Independent model of the revised R7 tiers, read the same way: "keyword-level" means the term
+// appears contiguously, "character-level" means its characters appear in order (`inOrder`, not
+// fuzzysort). A missing description has no text, exactly like an empty one (R8).
+const modelTier = (option: { title: string; description?: string }, query: string) => {
+  const terms = query.trim().toLowerCase().split(/\s+/)
+  const name = option.title.toLowerCase()
+  const description = (option.description ?? "").toLowerCase()
+  if (terms.every((term) => name.includes(term))) return 1
+  if (terms.every((term) => name.includes(term) || description.includes(term))) return 2
+  if (terms.every((term) => inOrder(term, name))) return 3
+  return 4
+}
 
 describe("dialog skill filter properties", () => {
   // Scoped to this file: bun runs every test file in one process, so restore the global config.
@@ -470,6 +519,47 @@ describe("dialog skill filter properties", () => {
       }),
       // P5: more runs than in P4, because one spot per term gives far more skill shapes per tier.
       { numRuns: 1000 },
+    )
+  })
+
+  // R7 (revised): When multiple skills match, results are ordered by match strength first and
+  // field second: (1) every query term appears contiguously (keyword-level) in the name/title;
+  // (2) otherwise, every term appears contiguously in the name/title or the description;
+  // (3) otherwise, every term's characters appear in order (character-level fuzzy) in the
+  // name/title; (4) all other matches, i.e. character-level matches that rely on the description.
+  // Kind: model/oracle
+  // Generator rationale (P5): the realistic corpora of the R3 properties (shared vocabulary,
+  // missing and empty descriptions), with three in four queries short: a word fragment or an
+  // acronym (shortQueryOf), the rest drawn from queryFor. The invariant above builds every tier
+  // from a filler alphabet that shares no letter with the query, so it never checks R7 on
+  // ordinary text, where one short term such as `er` is a keyword in one skill's description and
+  // only spread out, at word starts, in another skill's name, and where skills without a
+  // description compete with description matches. A Stryker mutant that ranked a missing
+  // description as if it held text survived the P4 suite for exactly that reason. `modelTier`
+  // reads each returned skill's tier off its own name and description, and the visible list must
+  // never show a weaker tier above a stronger one. R7 says nothing about order within a tier, so
+  // neither does this property.
+  test("R7: on realistic skills and queries, no result ranks above a result with a stronger match", () => {
+    // Three in four cases are short queries (shortQueryOf) in random case, where tiers diverge most.
+    const short = corpusOf().chain((skills) =>
+      FastCheck.record({
+        skills: FastCheck.constant(skills),
+        query: shortQueryOf(skills).chain((query) => FastCheck.mixedCase(FastCheck.constant(query))),
+      }),
+    )
+    FastCheck.assert(
+      FastCheck.property(
+        FastCheck.oneof({ weight: 1, arbitrary: corpusWithQuery() }, { weight: 3, arbitrary: short }),
+        (input) => {
+          const options = toOptions(input.skills)
+          const tiers = filterSkills(options, input.query).map((option) => modelTier(option, input.query))
+          expect(tiers).toEqual(tiers.toSorted((a, b) => a - b))
+        },
+      ),
+      // Many runs: in P5, that mutant misranked a skill in only about 1 in 1,400 short-query cases,
+      // so a few thousand runs often missed it. At 10,000 runs it was caught with 17 of 20 random
+      // seeds, and with the fixed seed.
+      { numRuns: 10000 },
     )
   })
 
