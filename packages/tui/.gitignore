@@ -1,0 +1,3 @@
+# Stryker mutation testing output (copies of reports are committed under mutants/<andrew-id>/)
+reports/
+.stryker-tmp/
