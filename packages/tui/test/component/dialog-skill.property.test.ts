@@ -1,10 +1,14 @@
-import { describe, expect, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { FastCheck } from "effect/testing"
 import { filterSkills } from "../../src/component/dialog-skill"
 
 // Property-based tests for the Skill Picker search (P4A). Requirement IDs and wording match
 // traceability/bbarin.md. Every property runs against the production `filterSkills`, the
 // function the dialog calls on every keystroke.
+
+// Fixed fast-check seed (P5 mutation testing): every run generates the same cases, so whether a
+// mutant is killed is reproducible and Stryker judges every mutant against one input set.
+const SEED = 17313
 
 type Skill = { name: string; description?: string }
 type Description = { description?: string }
@@ -137,6 +141,11 @@ const modelMatches = (option: { title: string; description?: string }, query: st
     )
 
 describe("dialog skill filter properties", () => {
+  // Scoped to this file: bun runs every test file in one process, so restore the global config.
+  const previous = FastCheck.readConfigureGlobal()
+  beforeAll(() => FastCheck.configureGlobal({ ...previous, seed: SEED }))
+  afterAll(() => FastCheck.configureGlobal(previous))
+
   // R2: A skill is discoverable when the query matches either its name/title or its description.
   // Kind: invariant
   // Generator rationale: arbitrary corpora with shared vocabulary, and the query is a slice copied
