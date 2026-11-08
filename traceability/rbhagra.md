@@ -1,6 +1,6 @@
 # Traceability: <Rohan  Bhagra> (<rbhagra>)
 
-**Target feature:** <OpenCode Global Search, https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/app/src/components/dialog-search-content.tsx>
+**Target feature:** <OpenCode Global Search, https://github.com/CMU-313/fall-26-opencode-chicken-parb/blob/main/packages/app/src/components/find-text-search.ts>
 
 ## Requirements
 
@@ -22,3 +22,17 @@ Properties written or suggested by opencode or another AI tool: <Property for R1
 |---|---|---|---|
 |R1 | When a query has multiple results, if there is one in the current package, it should be displayed first. |Whitespace-only queries never trigger a search|This is hard to test and there is not a reliable way to test what directory a user is in and accordingly verify what is returned first. |
 |R2 | When a global search query returns no results, there should be a popup to say so, and a button that suggests a nearby search | When a global search query returns no results, there should be a popup to say so | This adds additional testing complexity and is non-determinisitc. 
+
+## Hand-written mutants 
+
+| ID |  Requirement targeted | Change | Predicted killer | Actual result
+ | H1 | R1 |   return query.trim().length > 0 to   return query.length > 0, so the whitespace isn't removed before comparison | "Search runs only when query has non-whitespace input"
+| H2 | R3 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), languages) changed to return filterFindTextSearchResults(mapFindTextSearchResults(matches)), silently dropping language filtering | "a language search equals the unfiltered search filtered by that language's extensions through standard means"
+
+| H3 | R2 |  if (dot <= 0) return is changed to if (dot < 0) return, changing the exstention a file like .py gets | "UI Dialog shows none iff API returns None"
+
+|H4 | R2 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language) changed to ilterFindTextSearchResults(mapFindTextSearchResults(matches), language).slice(0, -1) | "UI Dialog shows none iff API returns None"
+
+| H5 | R4 |  const before = { text: text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const } to     const before = { text: index === 0 ? "" :text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }, forcing the plain text before a match to be empty  | "A empty/extraneous string is added before each input, and the variable is still highlighted, simply shifted." 
+
+
