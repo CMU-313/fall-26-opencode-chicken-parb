@@ -26,13 +26,12 @@ Properties written or suggested by opencode or another AI tool: <Property for R1
 ## Hand-written mutants 
 
 | ID |  Requirement targeted | Change | Predicted killer | Actual result
- | H1 | R1 |   return query.trim().length > 0 to   return query.length > 0, so the whitespace isn't removed before comparison | "Search runs only when query has non-whitespace input"
-| H2 | R3 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), languages) changed to return filterFindTextSearchResults(mapFindTextSearchResults(matches)), silently dropping language filtering | "a language search equals the unfiltered search filtered by that language's extensions through standard means"
+ | H1 | R1 |   return query.trim().length > 0 to   return query.length > 0, so the whitespace isn't removed before comparison | "Search runs only when query has non-whitespace input" | Killed by " a search runs exactly when the query has non-whitespace input" because we pass in a string with " ", and that returns len 1.
+| H2 | R3 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), languages) changed to return filterFindTextSearchResults(mapFindTextSearchResults(matches)), silently dropping language filtering | "a language search equals the unfiltered search filtered by that language's extensions through standard means" | Killed by " R3: a language search equals the unfiltered search filtered by that language's extensions", all languages are returned 
 
-| H3 | R2 |  if (dot <= 0) return is changed to if (dot < 0) return, changing the exstention a file like .py gets | "UI Dialog shows none iff API returns None"
+| H3 | R2 |  if (dot <= 0) return is changed to if (dot < 0) return, changing the exstention a file like .py is treated as a file with no extension. | "UI Dialog shows none iff API returns None" | Survived, the generator doesn't create files that start with a dot.
 
-|H4 | R2 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language) changed to ilterFindTextSearchResults(mapFindTextSearchResults(matches), language).slice(0, -1) | "UI Dialog shows none iff API returns None"
+|H4 | R2 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language) changed to filterFindTextSearchResults(mapFindTextSearchResults(matches), language).slice(0, -1) | "UI Dialog shows none iff API returns None" | Killed by "R2: the dialog lists no results exactly when the API returns none", the last entry is dropped off, which in a result of size 1, incorrectly reports that nothing is found.
 
-| H5 | R4 |  const before = { text: text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const } to     const before = { text: index === 0 ? "" :text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }, forcing the plain text before a match to be empty  | "A empty/extraneous string is added before each input, and the variable is still highlighted, simply shifted." 
-
+| H5 | R4 |  const before = { text: text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const } to     const before = { text: index === 0 ? "" :text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }, forcing the plain text before a match to be empty  | "A empty/extraneous string is added before each input, and the variable is still highlighted, simply shifted." | Killed by " R4: prepending an unrelated line only shifts highlighted and underlined text", a newline character was failed to be recognized and mishifted the result/
 
