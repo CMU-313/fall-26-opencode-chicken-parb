@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/find-text-search.ts b/packages/app/src/components/find-text-search.ts
+index abf8bb6..8bf7cd2 100644
+--- a/packages/app/src/components/find-text-search.ts
++++ b/packages/app/src/components/find-text-search.ts
+@@ -114,7 +114,7 @@ export function findTextSearchEntries(matches: FindTextMatch[], language?: FindT
+ export function findTextSearchLanguage(path: string) {
+   const name = path.split("/").pop() ?? ""
+   const dot = name.lastIndexOf(".")
+-  if (dot <= 0) return
++  if (dot < 0) return
+   const extension = name.slice(dot + 1).toLowerCase()
+   return FIND_TEXT_SEARCH_LANGUAGES.find((language) =>
+     (language.extensions as readonly string[]).includes(extension),

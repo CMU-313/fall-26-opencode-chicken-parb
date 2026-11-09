@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/find-text-search.ts b/packages/app/src/components/find-text-search.ts
+index abf8bb6..662fd32 100644
+--- a/packages/app/src/components/find-text-search.ts
++++ b/packages/app/src/components/find-text-search.ts
+@@ -84,7 +84,7 @@ export function findTextSearchLimitParam(limit = FIND_TEXT_SEARCH_LIMIT) {
+ }
+ 
+ export function shouldRunFindTextSearch(query: string) {
+-  return query.trim().length > 0
++  return query.length > 0
+ }
+ 
+ export function mapFindTextSearchResults(matches: FindTextMatch[]): FindTextSearchEntry[] {

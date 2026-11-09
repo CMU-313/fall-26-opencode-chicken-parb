@@ -33,5 +33,26 @@ Properties written or suggested by opencode or another AI tool: <Property for R1
 
 |H4 | R2 |  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language) changed to filterFindTextSearchResults(mapFindTextSearchResults(matches), language).slice(0, -1) | "UI Dialog shows none iff API returns None" | Killed by "R2: the dialog lists no results exactly when the API returns none", the last entry is dropped off, which in a result of size 1, incorrectly reports that nothing is found.
 
-| H5 | R4 |  const before = { text: text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const } to     const before = { text: index === 0 ? "" :text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }, forcing the plain text before a match to be empty  | "A empty/extraneous string is added before each input, and the variable is still highlighted, simply shifted." | Killed by " R4: prepending an unrelated line only shifts highlighted and underlined text", a newline character was failed to be recognized and mishifted the result.
+| H5 | R4 |  const before = { text: text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const } to const before = { text: index === 0 ? "" :text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }, forcing the plain text before a match to be empty  | "A empty/extraneous string is added before each input, and the variable is still highlighted, simply shifted." | Killed by " R4: prepending an unrelated line only shifts highlighted and underlined text", a newline character was failed to be recognized and mishifted the result.
 
+## Stryker comparison 
+
+My overall mutation score was 62.18. Further analysis of this score is in the responses below.
+
+1. Stryker did not generate mutants for H4 (did not change the arguments by removing, only reformatted them or added an additional mapping translation) or or H5 (only tested off by one). It did generate mutants for the remaining hand-written mutants. Stryker likely didn't generate mutants for H4 because removing an argument was not an obvious change to the code, and does not seem like a bug that can be reasonably introduced, as the function took 2 arguments. H5 did not have any matching mutants as the obvious change in that line of code is introducing an off-by-one error, rather than adding an additional comparison check, as that changes the core intent of the function.
+
+2. Two stryker survivors that I didn't consider as plausible bugs was a conditional expression change and and a variable assignment change. The two mutants are as follows: 
+
+
+ a) [Survived] ConditionalExpression
+src/components/find-text-search.ts:159:7
+-     if (!pattern) return [{ text, kind: "match" }]
++     if (false) return [{ text, kind: "match" }]
+b) [Survived] MethodExpression
+src/components/find-text-search.ts:93:47
+-       const leading = match.lines.text.length - match.lines.text.trimStart().length
++       const leading = match.lines.text.length - match.lines.text.trimEnd().length
+
+The first bug is unlikely to be one that a developer could make because the entire case logic is curropted in this mutant. A developer is unlikely to write a case that just checks falsehood, because this trivially will never run. The second bug is more plausible. Depending on the way the match string is constructed, it could make sense to trim and normalize from the end. 
+
+3. The stryker approach obviously has more coverage by virtue of it being automated and hitting every major line of code. This helps increase the amount of things that are tested, and can provide a stronger garuntee of how well-written code is. However, a lot of the failing cases from Stryker are trivial, or unlikely to ever exist as a bug, meaning that the score is not particularly meaningful. Another drawback that manual mutants help adress is that the stryker approach does not garuntee to test the interesting cases in the function. As a developer, you can best understand the types of bugs you would make, so by manually writing mutants, you can fortify your code against similar errors that might've been made. 

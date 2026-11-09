@@ -1,0 +1,13 @@
+diff --git a/packages/app/src/components/find-text-search.ts b/packages/app/src/components/find-text-search.ts
+index abf8bb6..561f15c 100644
+--- a/packages/app/src/components/find-text-search.ts
++++ b/packages/app/src/components/find-text-search.ts
+@@ -108,7 +108,7 @@ export function mapFindTextSearchResults(matches: FindTextMatch[]): FindTextSear
+ 
+ /** The entries the search dialog lists for an API response; an empty result shows the "no results" message. */
+ export function findTextSearchEntries(matches: FindTextMatch[], language?: FindTextSearchLanguage) {
+-  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language)
++  return filterFindTextSearchResults(mapFindTextSearchResults(matches), language).slice(0, -1)
+ }
+ 
+ export function findTextSearchLanguage(path: string) {

@@ -1,0 +1,19 @@
+diff --git a/packages/app/src/components/find-text-search.ts b/packages/app/src/components/find-text-search.ts
+index abf8bb6..20e0aba 100644
+--- a/packages/app/src/components/find-text-search.ts
++++ b/packages/app/src/components/find-text-search.ts
+@@ -143,12 +143,12 @@ export function findTextSearchSegments(
+   matches: FindTextSearchRange[],
+   variables: string[],
+ ): FindTextSearchSegment[] {
+-  const pattern = variables.length
++  const pattern = variables.length 
+     ? new RegExp(`(?<![\\w$])(?:${variables.map(escapeRegExp).join("|")})(?![\\w$])`, "g")
+     : undefined
+   const ranges = mergeRanges(matches, text.length)
+   const segments = ranges.flatMap((range, index) => {
+-    const before = { text: text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }
++    const before = { text: index === 0 ? "" :text.slice(ranges[index - 1]?.end ?? 0, range.start), kind: "plain" as const }
+     return [before, ...matchSegments(text.slice(range.start, range.end), pattern)]
+   })
+   segments.push({ text: text.slice(ranges.at(-1)?.end ?? 0), kind: "plain" })
