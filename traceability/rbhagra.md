@@ -76,10 +76,10 @@ Equivalent mutants excluded: 114 killed / 115 (99.13%).
 
 Exceprt of the opencode transcript with mutation written: 
 
-![prompt](mutants/rbhagra/screenshots/prompt.png)
+![prompt](../mutants/rbhagra/screenshots/prompt.png)
 
-![response](mutants/rbhagra/screenshots/response.png)
-
+![response](../mutants/rbhagra/screenshots/response.png)
+    
 This property is on line 218-236 of find-text-search.test.ts. It is an oracle property. 
 
 The mutant it let survive had the original code: const start = previous ? previous.index + previous[0].length : 0
@@ -116,9 +116,9 @@ test("variable names are highlighted in broader expressions", () => {
 Evidence mutant was killed:
 
 Initial: 
-![initial](mutants/rbhagra/screenshots/initial.png)
+![initial](../mutants/rbhagra/screenshots/initial.png)
 Fixed: 
-![fixed](mutants/rbhagra/screenshots/fixed.png)
+![fixed](../mutants/rbhagra/screenshots/fixed.png)
 
 As can be observed, the specific mutant from the initial run is gone, as it has been killed by the fix. 
 
