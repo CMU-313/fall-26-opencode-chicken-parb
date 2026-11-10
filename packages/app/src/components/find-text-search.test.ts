@@ -235,7 +235,7 @@ describe("find text search properties", () => {
   test("variable names are highlighted in broader expressions", () => {
     fc.assert(
       fc.property(
-        fc.string({ unit: fc.constantFrom("a", "b", " ", "(", ")", "=", "+") }, { maxLength: 20 }),
+        fc.string({ unit: fc.constantFrom("a", "b", " ", "(", ")", "=", "+"), maxLength: 20 }),
         (expression) => {
           const variables = findTextSearchVariables(expression)
           if (variables.length === 0) return true
