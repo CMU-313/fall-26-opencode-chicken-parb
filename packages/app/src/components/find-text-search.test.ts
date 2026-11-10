@@ -215,24 +215,62 @@ describe("find text search properties", () => {
     )
   })
 
-  // Opencode - 4 : A search result's line exactly removes internal whitespace when padded
-  // Kind: model / oracle
-  // this is written by opencode for the agent section 
-  test("Opencode-4:  checks that putting a line in front of the text only shifts the highlighted segments", () => {
+  // R4: Highlighting never adds, drops, or reorders characters of the result line.
+  // Kind: round-trip
+  test("R4: joining all segment texts gives back exactly the original text", () => {
+    fc.assert(
+      fc.property(segmentText, segmentRanges, segmentVariables, (text, ranges, variables) => {
+        expect(
+          findTextSearchSegments(text, ranges, variables)
+            .map((segment) => segment.text)
+            .join(""),
+        ).toBe(text)
+      }),
+    )
+  })
+
+  // Property Opencode 4: In broader expressions like "const x = y + z", variable names are highlighted
+  // Kind: oracle
+  // this is written by opencode 
+  test("variable names are highlighted in broader expressions", () => {
     fc.assert(
       fc.property(
-        fc.string(),
-        fc.string({ unit: fc.constantFrom(" ", "\t", "\n", "a", "b", "c"), minLength: 3, maxLength: 10 }),
-        (before, line) => {
-          const expression = before + "a" + before
-          const variables = findTextSearchVariables(before + "a" + before)
-          const result = marked(findTextSearchSegments(line + expression, [{ start: line.length, end: line.length + before.length + 1 }], variables))
-          const expected = marked(findTextSearchSegments(before + "a" + before, [{ start: 0, end: before.length + 1 }], variables))
-          expect(result).toEqual(expected.map((segment) => ({ ...segment, start: segment.start + line.length })))
+        fc.string({ unit: fc.constantFrom("a", "b", " ", "(", ")", "=", "+") }, { maxLength: 20 }),
+        (expression) => {
+          const variables = findTextSearchVariables(expression)
+          if (variables.length === 0) return true
+          const range = { start: 0, end: expression.length }
+          const segments = findTextSearchSegments(expression, [range], variables)
+          variables.forEach((varName) => {
+            expect(segments).toContainEqual(expect.objectContaining({ kind: "variable", text: varName }))
+          })
         },
       ),
     )
   })
+
+// Property - FIXED  Opencode 4: In broader expressions like "const x = y + z", variable names are highlighted
+// Kind: model / oracle
+// this is written by opencode
+// FIX: adding a round-trip check to ensure that joining the segments produce the original expression 
+// FIX: moving maxLength inside the fc.string check to make sure that the char limit is properly applied. 
+test("variable names are highlighted in broader expressions: FIXED ", () => {
+  fc.assert(
+    fc.property(
+      fc.string({ unit: fc.constantFrom("a", "b", " ", "(", ")", "=", "+"), maxLength: 20 }),
+      (expression) => {
+        const variables = findTextSearchVariables(expression)
+        const segments = findTextSearchSegments(expression, [{ start: 0, end: expression.length }], variables)
+        expect(segments.map((segment) => segment.text).join("")).toBe(expression)
+        expect(segments.every((segment) => segment.kind !== "plain")).toBe(true)
+        expect(
+          segments.filter((segment) => segment.kind === "variable").map((segment) => segment.text),
+        ).toEqual(expression.match(/[\w$]+/g) ?? [])
+      },
+    ),
+  )
+})
+
 
   // R4: The highlighted variables are exactly the distinct non-keyword identifiers of the query.
   // Kind: model / oracle
