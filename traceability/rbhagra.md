@@ -63,3 +63,65 @@ Original line: const name = path.split("/").pop() ?? ""
 Mutated line: ?? "Stryker was here!"
 Justification: The fallback in this method can never run, so the mutation has no real effect on the operation of tis code .`path` is always a string, and `String.prototype.split` always returns an array with at least one element. Also, `split` returns an array with an empty string, so `pop()` always returns a string and it will never return undefined. 
 `
+
+We have no other equivalent mutants 
+
+# Final mutation score 
+
+Stryker: 114 killed / 116 (98.32%) - there were also 3 that timed out 
+
+Equivalent mutants excluded: 114 killed / 115 (99.13%). 
+
+## Agent failure case 
+
+Exceprt of the opencode transcript with mutation written: 
+
+![prompt] (/workspaces/opencode/Screenshot 2026-11-09 at 10.19.16 PM.png)
+
+![response] (/workspaces/opencode/Screenshot 2026-11-09 at 10.19.27 PM.png)
+
+This property is on line 218-236 of find-text-search.test.ts. It is an oracle property. 
+
+The mutant it let survive had the original code: const start = previous ? previous.index + previous[0].length : 0
+
+It is mutant 81 on line 163. 
+
+The mutated code is: const start = previous ? previous.index - previous[0].length : 0
+
+This property was too weak because it only checked that each variable (in an expression that contained two variables) appeared somewhere in the returned segment, and it did not check the match text near a variable segment. The positioning was not checked under a transformation, just the presence of the two vairables. In this specific mutation, the gap of text between matched variables was truncated incorrectly, and the property passed it off as a correct response because it only checked for presence.
+
+Fix: 
+// Property Opencode 4: In broader expressions like "const x = y + z", variable names are highlighted
+// Kind: model / oracle
+// this is written by opencode
+// FIX: adding a round-trip check to ensure that joining the segments produce the original expression 
+// FIX: moving maxLength inside the fc.string check to make sure that the char limit is properly applied. 
+test("variable names are highlighted in broader expressions", () => {
+  fc.assert(
+    fc.property(
+      fc.string({ unit: fc.constantFrom("a", "b", " ", "(", ")", "=", "+"), maxLength: 20 }),
+      (expression) => {
+        const variables = findTextSearchVariables(expression)
+        const segments = findTextSearchSegments(expression, [{ start: 0, end: expression.length }], variables)
+        expect(segments.map((segment) => segment.text).join("")).toBe(expression)
+        expect(segments.every((segment) => segment.kind !== "plain")).toBe(true)
+        expect(
+          segments.filter((segment) => segment.kind === "variable").map((segment) => segment.text),
+        ).toEqual(expression.match(/[\w$]+/g) ?? [])
+      },
+    ),
+  )
+})
+
+Evidence mutant was killed:
+
+Initial: 
+![initial] (/workspaces/opencode/Screenshot 2026-11-09 at 10.48.58 PM.png)
+
+Fixed: 
+
+![fixed] (/workspaces/opencode/Screenshot 2026-11-09 at 10.52.23 PM.png)
+
+As can be observed, the specific mutant from the initial run is gone, as it has been killed by the fix. 
+
+NOTE: I obtained another imporvement over this fixed version (as noted in the statistics for final mutation score) by adding an additional round-trip check. 
