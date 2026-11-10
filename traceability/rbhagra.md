@@ -14,7 +14,7 @@
 
 
 
-Properties written or suggested by opencode or another AI tool: <Property for R1, Property for R4.>
+Properties written or suggested by opencode or another AI tool: <Property for R1, Property for R4. After this section:  O-3, anything beyond the handwritten properties >
 
 ## Requirement changes
 
@@ -56,3 +56,10 @@ src/components/find-text-search.ts:93:47
 The first bug is unlikely to be one that a developer could make because the entire case logic is curropted in this mutant. A developer is unlikely to write a case that just checks falsehood, because this trivially will never run. The second bug is more plausible. Depending on the way the match string is constructed, it could make sense to trim and normalize from the end. 
 
 3. The stryker approach obviously has more coverage by virtue of it being automated and hitting every major line of code. This helps increase the amount of things that are tested, and can provide a stronger garuntee of how well-written code is. However, a lot of the failing cases from Stryker are trivial, or unlikely to ever exist as a bug, meaning that the score is not particularly meaningful. Another drawback that manual mutants help adress is that the stryker approach does not garuntee to test the interesting cases in the function. As a developer, you can best understand the types of bugs you would make, so by manually writing mutants, you can fortify your code against similar errors that might've been made. 
+
+# Equivalent mutants 
+Mutant: Stryker #14 (StringLiteral)
+Original line: const name = path.split("/").pop() ?? ""
+Mutated line: ?? "Stryker was here!"
+Justification: The fallback in this method can never run, so the mutation has no real effect on the operation of tis code .`path` is always a string, and `String.prototype.split` always returns an array with at least one element. Also, `split` returns an array with an empty string, so `pop()` always returns a string and it will never return undefined. 
+`
