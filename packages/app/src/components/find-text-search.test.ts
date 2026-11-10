@@ -38,7 +38,7 @@ describe("find text search helpers", () => {
       ]),
     ).toEqual([
       {
-        id: "src/main.ts:12: ï¿½40",
+        id: "src/main.ts:12:40",
         path: "src/main.ts",
         line: 12,
         text: "const needle = true",
@@ -215,9 +215,10 @@ describe("find text search properties", () => {
     )
   })
 
-  // O-3: A search result's line exactly removes internal whitespace when padded
+  // Opencode - 4 : A search result's line exactly removes internal whitespace when padded
   // Kind: model / oracle
-  test("O-3: a search result's line exactly removes internal whitespace when padded", () => {
+  // this is written by opencode for the agent section 
+  test("Opencode-4:  checks that putting a line in front of the text only shifts the highlighted segments", () => {
     fc.assert(
       fc.property(
         fc.string(),
@@ -225,8 +226,8 @@ describe("find text search properties", () => {
         (before, line) => {
           const expression = before + "a" + before
           const variables = findTextSearchVariables(before + "a" + before)
-          const result = marked(findTextSearchSegments(line + expression, [{ start: before.length, end: before.length + 1 }], variables))
-          const expected = marked(findTextSearchSegments(before + "a"_origin['sk'] + before, [{ start: 0, end: before.length + 1 }], variables))
+          const result = marked(findTextSearchSegments(line + expression, [{ start: line.length, end: line.length + before.length + 1 }], variables))
+          const expected = marked(findTextSearchSegments(before + "a" + before, [{ start: 0, end: before.length + 1 }], variables))
           expect(result).toEqual(expected.map((segment) => ({ ...segment, start: segment.start + line.length })))
         },
       ),
@@ -238,11 +239,11 @@ describe("find text search properties", () => {
   test("R4: the query's highlighted variables are its distinct non-keyword identifiers", () => {
     fc.assert(
       fc.property(
-        fc.array(fc.oneof(identifier, fc.constantFrom(...KEYWORD_SAMPLE)),
+        fc.array(fc.oneof(identifier, fc.constantFrom(...KEYWORD_SAMPLE))),
         fc.constantFrom(" ", "(", ".", "+", ", "),
         (words, separator) => {
           expect(findTextSearchVariables(words.join(separator))).toEqual([
-            ...new Set(words.filter((word) => !KEYWORD_SAMPLE.includes(word)),
+            ...new Set(words.filter((word) => !KEYWORD_SAMPLE.includes(word))),
           ])
         },
       ),
@@ -279,7 +280,7 @@ function marked(segments: FindTextSearchSegment[]) {
 }
 
 // Per-character model: a character is matched when any input range covers it; matched runs are split
-// into `[\\w$]+` tokens, and tokens equal to a variable are highlighted.
+// into `[\w$]+` tokens, and tokens equal to a variable are highlighted.
 function expectedSegments(text: string, ranges: FindTextSearchRange[], variables: string[]) {
   return text
     .split("")
@@ -299,7 +300,7 @@ function expectedSegments(text: string, ranges: FindTextSearchRange[], variables
 
 function highlighted(text: string, variables: string[]) {
   return text
-    .split(/([\\w$]+)/)
+    .split(/([\w$]+)/)
     .filter((piece) => piece.length > 0)
     .reduce<FindTextSearchSegment[]>((segments, piece) => {
       const kind = variables.includes(piece) ? "variable" : "match"
