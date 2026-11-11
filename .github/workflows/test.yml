@@ -58,8 +58,12 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: Run unit tests
+        # This step already took up to ~9.5 minutes on main; with a sixth
+        # package (tui) wired into turbo.json, PR runs landed just over a
+        # 10 minute limit. 15 leaves headroom without hiding a real hang
+        # (the job itself is still capped at 30).
         timeout-minutes: 15
-        # Default turbo concurrency (15) oversubscribes ubuntu-latest's 4
+        # Default turbo concurrency (10) oversubscribes ubuntu-latest's 4
         # vCPUs across 5 packages' test tasks running at once — same
         # contention issue typecheck.yml already caps for tsgo.
         run: GITHUB_ACTIONS=false bun turbo test --concurrency=4
