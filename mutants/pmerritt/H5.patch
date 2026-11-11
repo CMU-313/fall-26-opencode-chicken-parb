@@ -1,0 +1,12 @@
+diff --git a/packages/opencode/src/config/config.ts b/packages/opencode/src/config/config.ts
+index cc9b349..540305b 100644
+--- a/packages/opencode/src/config/config.ts
++++ b/packages/opencode/src/config/config.ts
+@@ -636,6 +636,7 @@ const layer = Layer.effect(
+       }
+       const existing = ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(before, file), file)
+       const merged = mergeDeep(writable(existing), patch)
++      if (merged.permission) delete merged.permission["*"]
+       const serialized = JSON.stringify(merged, null, 2)
+       const changed = serialized !== before
+       if (changed) yield* fs.writeFileString(file, serialized).pipe(Effect.orDie)
