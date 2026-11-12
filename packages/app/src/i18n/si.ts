@@ -766,6 +766,8 @@ export const dict: Record<string, string> = {
   "session.new.lastModified": "අවසන් වරට වෙනස් කරන ලදී",
   "session.header.search.placeholder": "{{project}} සොයන්න",
   "session.header.searchFiles": "ගොනු සොයන්න",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "විවෘත කරන්න",
   "session.header.open.action": "{{app}} විවෘත කරන්න",
   "session.header.open.ariaLabel": "{{app}} හි විවෘත කරන්න",

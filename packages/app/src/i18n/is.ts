@@ -772,6 +772,8 @@ export const dict = {
   "session.new.lastModified": "Síðast breytt",
   "session.header.search.placeholder": "Leitaðu að {{project}}",
   "session.header.searchFiles": "Leitaðu að skrám",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Opið inn",
   "session.header.open.action": "Opnaðu {{app}}",
   "session.header.open.ariaLabel": "Opið í {{app}}",

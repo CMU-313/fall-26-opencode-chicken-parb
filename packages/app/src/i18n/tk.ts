@@ -769,6 +769,8 @@ export const dict = {
   "session.new.lastModified": "Soňky gezek üýtgedildi",
   "session.header.search.placeholder": "{{project}} gözläň",
   "session.header.searchFiles": "Faýllary gözläň",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Aç",
   "session.header.open.action": "{{app}} açyň",
   "session.header.open.ariaLabel": "{{app}}-de açyň",

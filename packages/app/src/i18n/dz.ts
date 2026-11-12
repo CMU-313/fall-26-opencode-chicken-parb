@@ -782,6 +782,8 @@ export const dict: Record<string, string> = {
   "session.new.lastModified": "མཐའ་མའི་བཟོ་བཅོས་འབད་ཡོདཔ།",
   "session.header.search.placeholder": "འཚོལ་ཞིབ་ {{project}}།",
   "session.header.searchFiles": "ཡིག་སྣོད་ཚུ་འཚོལ་ཞིབ་འབད།",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "ནང་ཁ་ཕྱེ།",
   "session.header.open.action": "{{app}}ཁ་ཕྱེ།",
   "session.header.open.ariaLabel": "{{app}}ནང་ཁ་ཕྱེ།",

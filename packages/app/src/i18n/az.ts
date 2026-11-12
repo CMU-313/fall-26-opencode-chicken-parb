@@ -779,6 +779,8 @@ export const dict = {
   "session.new.lastModified": "Son dəyişiklik",
   "session.header.search.placeholder": "{{project}} axtar",
   "session.header.searchFiles": "Faylları axtar",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Burada aç:",
   "session.header.open.action": "{{app}} tətbiqini aç",
   "session.header.open.ariaLabel": "{{app}} tətbiqində aç",

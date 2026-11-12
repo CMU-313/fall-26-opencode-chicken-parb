@@ -764,6 +764,8 @@ export const dict = {
   "session.new.lastModified": "ດັດແກ້ຫຼ້າສຸດ",
   "session.header.search.placeholder": "ຄົ້ນຫາ {{project}}",
   "session.header.searchFiles": "ຊອກຫາໄຟລ໌",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "ເປີດໃນ",
   "session.header.open.action": "ເປີດ {{app}}",
   "session.header.open.ariaLabel": "ເປີດໃນ {{app}}",

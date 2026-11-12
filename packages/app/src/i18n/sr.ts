@@ -773,6 +773,8 @@ export const dict = {
   "session.new.lastModified": "Последња измена",
   "session.header.search.placeholder": "Претрага {{project}}",
   "session.header.searchFiles": "Претрага датотека",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Отвори у",
   "session.header.open.action": "Отвори {{app}}",
   "session.header.open.ariaLabel": "Отвори у {{app}}",

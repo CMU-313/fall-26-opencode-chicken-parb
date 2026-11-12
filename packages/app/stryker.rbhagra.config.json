@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test --conditions=solid ./src/components/find-text-search.test.ts"
+  },
+  "mutate": [
+    "src/components/find-text-search.ts:86-98",
+    "src/components/find-text-search.ts:105-189",
+    "src/components/find-text-search.ts:194-201"
+  ],
+  "coverageAnalysis": "off",
+  "reporters": ["clear-text", "progress", "html"],
+  "htmlReporter": { "fileName": "reports/mutation/rbhagra.html" }
+}

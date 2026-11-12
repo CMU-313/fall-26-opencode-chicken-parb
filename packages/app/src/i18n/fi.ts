@@ -667,6 +667,8 @@ export const dict = {
   "session.new.lastModified": "Viimeksi muokattu",
   "session.header.search.placeholder": "Hae projektista {{project}}",
   "session.header.searchFiles": "Etsi tiedostoja",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Avaa sovelluksessa",
   "session.header.open.action": "Avaa {{app}}",
   "session.header.open.ariaLabel": "Avaa sovelluksessa {{app}}",

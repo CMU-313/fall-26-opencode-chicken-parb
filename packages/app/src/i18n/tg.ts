@@ -772,6 +772,8 @@ export const dict = {
   "session.new.lastModified": "Охирин тағир дода шудааст",
   "session.header.search.placeholder": "Ҷустуҷӯ {{project}}",
   "session.header.searchFiles": "Ҷустуҷӯи файлҳо",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Кушодан дар",
   "session.header.open.action": "Кушодан {{app}}",
   "session.header.open.ariaLabel": "Кушодан дар {{app}}",

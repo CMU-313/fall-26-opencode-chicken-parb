@@ -773,6 +773,8 @@ export const dict = {
   "session.new.lastModified": "Naposledy upravené",
   "session.header.search.placeholder": "Hľadať v {{project}}",
   "session.header.searchFiles": "Hľadať súbory",
+  "dialog.searchContent.language.all": "All languages",
+  "dialog.searchContent.highlightVariables": "Highlight variables",
   "session.header.openIn": "Otvoriť v",
   "session.header.open.action": "Otvoriť v {{app}}",
   "session.header.open.ariaLabel": "Otvoriť v {{app}}",
