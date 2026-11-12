@@ -1,19 +1,24 @@
 import fc from "fast-check"
+import path from "path"
 import { test, expect, describe } from "bun:test"
 import { Effect, Layer } from "effect"
 import { HttpClient } from "effect/unstable/http"
 
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { Global } from "@opencode-ai/core/global"
 import { httpClient } from "@opencode-ai/core/effect/app-node-platform"
 import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
 import { ConfigPermissionV1 } from "@opencode-ai/core/v1/config/permission"
+import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Npm } from "@opencode-ai/core/npm"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 
 import { Config } from "@/config/config"
 import { Permission } from "../../src/permission"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { ConfigParse } from "../../src/config/parse"
+import { SessionID } from "../../src/session/schema"
 import { Auth } from "../../src/auth"
 import { Account } from "../../src/account/account"
 import { Env } from "../../src/env"
@@ -27,12 +32,15 @@ const unexpectedHttp = HttpClient.make((request) =>
   Effect.die(`unexpected http request: ${request.method} ${request.url}`),
 )
 
-const layer = LayerNode.compile(LayerNode.group([Config.node, FSUtil.node, Env.node, CrossSpawnSpawner.node]), [
-  [Auth.node, AuthTest.empty],
-  [Account.node, AccountTest.empty],
-  [Npm.node, NpmTest.noop],
-  [httpClient, Layer.succeed(HttpClient.HttpClient, unexpectedHttp)],
-])
+const layer = LayerNode.compile(
+  LayerNode.group([Config.node, FSUtil.node, Env.node, CrossSpawnSpawner.node, Permission.node, EventV2Bridge.node]),
+  [
+    [Auth.node, AuthTest.empty],
+    [Account.node, AccountTest.empty],
+    [Npm.node, NpmTest.noop],
+    [httpClient, Layer.succeed(HttpClient.HttpClient, unexpectedHttp)],
+  ],
+)
 
 // Create isolated project for each sample
 const runInProject = <A, E>(body: (dir: string) => Effect.Effect<A, E, Layer.Success<typeof layer>>) =>
@@ -42,6 +50,31 @@ const setPermission = (key: string, action: ConfigPermissionV1.Action) =>
   Config.Service.use((svc) =>
     svc.update(ConfigParse.schema(ConfigV1.Info, { permission: { [key]: action } }, "test:config")),
   )
+
+const askWithRuleset = (key: string, pattern: string, ruleset: PermissionV1.Ruleset) =>
+  Permission.Service.use((svc) =>
+    svc.ask({
+      sessionID: SessionID.make("ses_test-permissions"),
+      permission: key,
+      patterns: [pattern],
+      metadata: {},
+      always: [],
+      ruleset,
+    }),
+  )
+
+const withGlobalConfigDir =
+  (dir: string) =>
+  <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+    Effect.acquireUseRelease(
+      Effect.sync(() => {
+        const previous = Global.Path.config
+        Object.assign(Global.Path, { config: dir })
+        return previous
+      }),
+      () => effect,
+      (previous) => Effect.sync(() => Object.assign(Global.Path, { config: previous })),
+    )
 
 const actionArb = fc.constantFrom(...ConfigPermissionV1.Action.literals)
 const keyArb = fc.constantFrom(
@@ -82,6 +115,24 @@ describe("permissions (property-based)", () => {
       RUNS,
     ))
 
+  // R1: "The config.json file needs to be saved upon change."
+  // Kind: round-trip
+  test("R1: rewriting an unchanged permission reports no change", () =>
+    fc.assert(
+      fc.asyncProperty(keyArb, actionArb, (key, action) =>
+        runInProject((dir) =>
+          Effect.gen(function* () {
+            const config = ConfigParse.schema(ConfigV1.Info, { permission: { [key]: action } }, "test:config")
+            yield* FSUtil.use.writeWithDirs(path.join(dir, "opencode.json"), JSON.stringify(config))
+            yield* Config.Service.use((svc) => svc.updateGlobal(config))
+            const rewrite = yield* Config.Service.use((svc) => svc.updateGlobal(config))
+            expect(rewrite.changed).toBe(false)
+          }).pipe(withGlobalConfigDir(dir)),
+        ),
+      ),
+      RUNS,
+    ))
+
   // R2: "If a permission is changed to deny, the user should never see a pop-up
   // asking for permission."
   // Kind: invariant
@@ -91,6 +142,45 @@ describe("permissions (property-based)", () => {
         const ruleset = Permission.fromConfig({ [key]: "deny" })
         expect(Permission.evaluate(key, pattern, ruleset).action).toBe("deny")
       }),
+    ))
+
+  // R2: "If a permission is changed to deny, the user should never see a pop-up
+  // asking for permission."
+  // Kind: invariant
+  test("R2: a denied tool rejects with a denied error instead of asking", () =>
+    fc.assert(
+      fc.asyncProperty(keyArb, fc.string(), (key, pattern) =>
+        runInProject(() =>
+          Effect.gen(function* () {
+            const denyRule = { permission: key, pattern: "*", action: "deny" as const }
+            const unrelated = { permission: "unrelated", pattern: "*", action: "allow" as const }
+            const error = yield* askWithRuleset(key, pattern, [unrelated, denyRule]).pipe(
+              Effect.timeout("2 seconds"),
+              Effect.flip,
+            )
+            expect(error._tag).toBe("PermissionDeniedError")
+            if (error._tag === "PermissionDeniedError") expect(error.ruleset).toEqual([denyRule])
+          }),
+        ),
+      ),
+      RUNS,
+    ))
+
+  // R2: "If a permission is changed to deny, the user should never see a pop-up
+  // asking for permission."
+  // Kind: invariant
+  test("R2: an allowed tool resolves without asking", () =>
+    fc.assert(
+      fc.asyncProperty(keyArb, fc.string(), (key, pattern) =>
+        runInProject(() =>
+          Effect.gen(function* () {
+            const allowRule = { permission: key, pattern: "*", action: "allow" as const }
+            const result = yield* askWithRuleset(key, pattern, [allowRule]).pipe(Effect.timeout("2 seconds"))
+            expect(result).toBeUndefined()
+          }),
+        ),
+      ),
+      RUNS,
     ))
 
   // R3: "If a setting is changed, it must be reversible."
