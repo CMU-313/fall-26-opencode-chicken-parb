@@ -1,0 +1,13 @@
+diff --git a/packages/opencode/src/permission/index.ts b/packages/opencode/src/permission/index.ts
+index 2e27ff2..5527f4d 100644
+--- a/packages/opencode/src/permission/index.ts
++++ b/packages/opencode/src/permission/index.ts
+@@ -187,7 +187,7 @@ export function fromConfig(permission: ConfigPermissionV1.Info) {
+   const ruleset: PermissionV1.Rule[] = []
+   for (const [key, value] of Object.entries(permission)) {
+     if (typeof value === "string") {
+-      ruleset.push({ permission: key, action: value, pattern: "*" })
++      ruleset.push({ permission: key, action: value, pattern: "" })
+       continue
+     }
+     ruleset.push(

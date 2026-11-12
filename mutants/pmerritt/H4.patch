@@ -1,0 +1,13 @@
+diff --git a/packages/tui/src/component/dialog-permissions.tsx b/packages/tui/src/component/dialog-permissions.tsx
+index 7021e82..0cdc573 100644
+--- a/packages/tui/src/component/dialog-permissions.tsx
++++ b/packages/tui/src/component/dialog-permissions.tsx
+@@ -95,7 +95,7 @@ function actionFor(permission: PermissionConfig | undefined, key: string): Permi
+   if (typeof permission === "string") return permission
+   const value = permission?.[key]
+   if (typeof value === "string") return value
+-  return "ask"
++  return "allow"
+ }
+ 
+ function withAction(permission: PermissionConfig | undefined, key: string, action: PermissionActionConfig) {
