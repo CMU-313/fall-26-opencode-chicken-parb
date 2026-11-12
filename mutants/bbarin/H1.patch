@@ -1,0 +1,13 @@
+diff --git a/packages/tui/src/component/dialog-skill.tsx b/packages/tui/src/component/dialog-skill.tsx
+index e26b221..1e4c403 100644
+--- a/packages/tui/src/component/dialog-skill.tsx
++++ b/packages/tui/src/component/dialog-skill.tsx
+@@ -100,7 +100,7 @@ export function filterSkills<T extends { title: string; description?: string }>(
+     return 3
+   }
+   return fuzzysort
+-    .go(needle, options, { keys: ["title", "description"] })
++    .go(needle, options, { keys: ["title"] })
+     .map((result) => ({ option: result.obj, score: result.score, tier: tier(result.obj) }))
+     .toSorted((a, b) => a.tier - b.tier || b.score - a.score)
+     .map((result) => result.option)

@@ -1,0 +1,14 @@
+diff --git a/packages/opencode/src/config/config.ts b/packages/opencode/src/config/config.ts
+index cc9b349..0c8e2f0 100644
+--- a/packages/opencode/src/config/config.ts
++++ b/packages/opencode/src/config/config.ts
+@@ -645,8 +645,7 @@ const layer = Layer.effect(
+     const update = Effect.fn("Config.update")(function* (config: Info) {
+       const ctx = yield* InstanceState.context
+       const base = ctx.worktree && ctx.worktree !== "/" ? ctx.worktree : ctx.directory
+-      const result = yield* writeConfigFile(path.join(base, "config.json"), writable(config))
+-      if (result.changed) yield* InstanceState.invalidate(state)
++      yield* writeConfigFile(path.join(base, "config.json"), writable(config))
+     })
+ 
+     const invalidate = Effect.fn("Config.invalidate")(function* () {

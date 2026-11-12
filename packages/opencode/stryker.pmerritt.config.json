@@ -1,0 +1,13 @@
+{
+  "testRunner": "command",
+  "commandRunner": { "command": "bun test test/config/permissions.property.test.ts" },
+  "mutate": [
+    "src/config/config.ts:638-641",
+    "src/config/config.ts:648-649",
+    "src/permission/index.ts:75-79",
+    "src/permission/index.ts:190-190",
+    "../tui/src/component/dialog-permissions.tsx:98-98"
+  ],
+  "coverageAnalysis": "off",
+  "reporters": ["html", "clear-text", "progress"]
+}

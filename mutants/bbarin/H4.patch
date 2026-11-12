@@ -1,0 +1,15 @@
+diff --git a/packages/tui/src/component/dialog-skill.tsx b/packages/tui/src/component/dialog-skill.tsx
+index e26b221..df90cdc 100644
+--- a/packages/tui/src/component/dialog-skill.tsx
++++ b/packages/tui/src/component/dialog-skill.tsx
+@@ -95,8 +95,8 @@ export function filterSkills<T extends { title: string; description?: string }>(
+     const title = option.title.toLowerCase()
+     const description = option.description?.toLowerCase() ?? ""
+     if (terms.every((term) => title.includes(term))) return 0
+-    if (terms.every((term) => title.includes(term) || description.includes(term))) return 1
+-    if (fuzzysort.single(needle, option.title)) return 2
++    if (fuzzysort.single(needle, option.title)) return 1
++    if (terms.every((term) => title.includes(term) || description.includes(term))) return 2
+     return 3
+   }
+   return fuzzysort
