@@ -1,0 +1,227 @@
+opencode session transcript: P5 agent failure case (R7 property)
+=================================================================
+
+Session:   ses_e47fc93a8ffewKbEIecYq5SapO, title "P5 agent property R7"
+Date:      2026-11-07, 21:56:33Z to 21:59:13Z (UTC)
+opencode:  1.19.5 (official CLI, `npm i -g opencode-ai@latest`), agent "build",
+           model opencode/big-pickle (free tier)
+Command:   opencode run --title "P5 agent property R7" "<prompt below>"
+
+Setup, so the property is opencode's own work:
+- run in a scratch git worktree of commit 3236166 (the P4 head of bbarin/properties; its
+  production code is identical to the final P5 code), with node_modules linked in;
+- my own property file (packages/tui/test/component/dialog-skill.property.test.ts) was deleted
+  in that worktree, so opencode could not copy it. Its attempt to read it fails in the
+  transcript below;
+- a project opencode.json limited the agent: edits only to the new test file; bash only
+  cd / ls / bun test / git status|diff|log; no web access. Denied calls appear as errors below.
+No P5 material (mutants, Stryker results) existed in that worktree.
+
+Prompt (verbatim)
+-----------------
+In this repository, inspect the Skill Picker filtering/ranking implementation (`filterSkills` in `packages/tui/src/component/dialog-skill.tsx`) and this requirement from `traceability/bbarin.md`:
+
+R7: When multiple skills match, results are ordered by match strength first and field second: (1) every query term appears contiguously (keyword-level) in the name/title; (2) otherwise, every term appears contiguously in the name/title or the description; (3) otherwise, every term's characters appear in order (character-level fuzzy) in the name/title; (4) all other matches, i.e. character-level matches that rely on the description.
+
+Write one fast-check property-based test that checks R7. Use `FastCheck` from `effect/testing` (that is how this repo's tests get fast-check; see `packages/core/test/config/config.test.ts`) and the existing bun:test style in `packages/tui/test/component/`. Put the test in a new file `packages/tui/test/component/dialog-skill.opencode.property.test.ts`, run it from `packages/tui` with `bun test test/component/dialog-skill.opencode.property.test.ts`, and explain the generator and the assertion. Do not modify production code.
+
+Output of `opencode run` (verbatim, ANSI colors removed; the only shortenings are marked
+"[... omitted ...]")
+------------------------------------------------------------------------------------------
+started 2026-11-07T21:56:33Z
+
+> build · big-pickle
+
+→ Read packages/tui/src/component/dialog-skill.tsx
+→ Read traceability/bbarin.md
+→ Read packages/core/test/config/config.test.ts
+
+$ ls packages/tui/test/component/
+dialog-session-list.test.ts
+dialog-skill.test.ts
+
+→ Read packages/tui/test/component/dialog-skill.test.ts
+✗ Read packages/tui/test/component/dialog-skill.property.test.ts failed
+Error: File not found: C:\Users\BatuPC\AppData\Local\Temp\claude\0c4d47596b1ba621\f3dfbfb7-6478-4101-adeb-79f481913cc0\scratchpad\oc-wt\packages\tui\test\component\dialog-skill.property.test.ts
+→ Read packages/tui/package.json
+→ Read packages/tui/test/component/dialog-session-list.test.ts
+✗ ls packages/tui && cat packages/tui/tsconfig.json 2>/dev/null; cat packages/tui/bunfig.toml 2>/dev/null failed
+Error: The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [... permission rule list from opencode.json omitted ...]
+
+$ ls node_modules/effect/dist/dts/testing 2>/dev/null || ls packages/tui/node_modules/effect/dist/dts/testing 2>/dev/null
+(no output)
+
+$ ls packages/tui
+bunfig.toml
+node_modules
+package.json
+src
+sst-env.d.ts
+test
+tsconfig.json
+
+✱ Grep "FastCheck" in packages/tui · 0 matches
+✗ ls packages/tui/node_modules/effect/dist/dts/testing; cat packages/tui/bunfig.toml; cat packages/tui/tsconfig.json failed
+Error: The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [... permission rule list from opencode.json omitted ...]
+
+$ ls packages/tui/test
+app-lifecycle.test.tsx
+cli
+clipboard.test.ts
+component
+config.test.tsx
+context
+editor.test.ts
+feature-plugins
+fixture
+index.test.tsx
+keymap.test.tsx
+plugin
+prompt
+runtime.test.tsx
+theme.test.ts
+util
+
+$ ls packages/tui/node_modules/effect/dist/dts/testing
+ls: cannot access 'packages/tui/node_modules/effect/dist/dts/testing': No such file or directory
+
+→ Read packages/tui/bunfig.toml
+→ Read packages/tui/tsconfig.json
+
+$ ls packages/tui/node_modules/effect; ls node_modules/effect 2>/dev/null
+dist
+LICENSE
+package.json
+README.md
+src
+
+✱ Grep "FastCheck|fast-check" in packages/core/test · 3 matches
+
+$ ls packages/tui/node_modules/effect/dist
+Array.d.ts
+Array.d.ts.map
+Array.js
+[... 545 more file names omitted ...]
+Utils.d.ts.map
+Utils.js
+Utils.js.map
+
+✗ Grep "FastCheck" failed in packages/tui/node_modules/effect/dist
+Error: The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [... permission rule list from opencode.json omitted ...]
+
+$ ls packages/tui/node_modules/fuzzysort
+fuzzysort.js
+fuzzysort.min.js
+index.d.ts
+LICENSE
+package.json
+README.md
+
+$ ls packages/tui/node_modules/effect/dist/testing
+FastCheck.d.ts
+FastCheck.d.ts.map
+FastCheck.js
+FastCheck.js.map
+index.d.ts
+index.d.ts.map
+index.js
+index.js.map
+TestClock.d.ts
+TestClock.d.ts.map
+TestClock.js
+TestClock.js.map
+TestConsole.d.ts
+TestConsole.d.ts.map
+TestConsole.js
+TestConsole.js.map
+TestSchema.d.ts
+TestSchema.d.ts.map
+TestSchema.js
+TestSchema.js.map
+
+✗ Read packages/tui/node_modules/effect/dist/testing/FastCheck.d.ts failed
+Error: The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [... permission rule list from opencode.json omitted ...]
+✗ Read packages/tui/node_modules/fuzzysort/index.d.ts failed
+Error: The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [... permission rule list from opencode.json omitted ...]
+
+← Write packages/tui/test/component/dialog-skill.opencode.property.test.ts
+Wrote file successfully.
+
+$ bun test test/component/dialog-skill.opencode.property.test.ts
+bun test v1.3.14 (0d9b296a)
+
+ 1 pass
+ 0 fail
+ 200 expect() calls
+Ran 1 test across 1 file. [924.00ms]
+
+$ git status --short
+D packages/tui/test/component/dialog-skill.property.test.ts
+?? opencode.json
+?? packages/tui/test/component/dialog-skill.opencode.property.test.ts
+
+Created `packages/tui/test/component/dialog-skill.opencode.property.test.ts` and ran it from `packages/tui`:
+
+```
+bun test test/component/dialog-skill.opencode.property.test.ts
+1 pass, 0 fail, 200 expect() calls
+```
+
+**Generator:** `term` builds a 2–4 letter query from `a`–`e`. For each term it constructs exactly four skills, one per R7 tier: term contiguous in title (name keyword), term contiguous in description only (description keyword), term as in-order characters with gaps in the title, and the same with gaps in the description. Filler `z` and gap `-` are outside the term alphabet, so each skill lands in its intended tier. A second arbitrary of four random integers is used as sort keys to shuffle the skills, so passing requires actual ranking rather than preserving input order.
+
+**Assertion:** For every generated term/order, `filterSkills(shuffled, term)` must return titles in the fixed tier order: name keyword → description keyword → name letters → description letters. Run with `numRuns: 200`.
+
+Production code was not modified.
+exit=0
+ended 2026-11-07T21:59:13Z
+
+
+File written by opencode (verbatim): packages/tui/test/component/dialog-skill.opencode.property.test.ts
+-----------------------------------------------------------------------------------------------
+import { describe, expect, test } from "bun:test"
+import { FastCheck } from "effect/testing"
+import { filterSkills } from "../../src/component/dialog-skill"
+
+type SkillOption = { title: string; description?: string }
+
+// Terms use a tiny alphabet so the filler characters below can be guaranteed
+// absent from the term. "-" is the gap character used for character-level hits.
+const term = FastCheck.array(FastCheck.constantFrom("a", "b", "c", "d", "e"), {
+  minLength: 2,
+  maxLength: 4,
+}).map((letters) => letters.join(""))
+
+// Four skills, one per R7 tier, built from the same query term:
+//   tier 1 (keyword in the name): the term is contiguous in the title.
+//   tier 2 (keyword in the description): the term is contiguous in the description only.
+//   tier 3 (letters in the name): the term's characters are in order in the title with gaps.
+//   tier 4 (letters in the description): the term's characters are in order in the description with gaps.
+const tiers = (query: string): SkillOption[] => [
+  { title: `name-${query}`, description: "zzzz" },
+  { title: "1zzzz", description: `contains ${query} keyword` },
+  { title: `2${query.split("").join("-")}`, description: "zzzz" },
+  { title: "3zzzz", description: query.split("").join("-") },
+]
+
+// Random sort keys put the four tiers in a different input order on each run,
+// so a filter that merely preserved input order would fail.
+const order = FastCheck.array(FastCheck.integer(), { minLength: 4, maxLength: 4 })
+
+describe("dialog skill filter (R7 property)", () => {
+  test("orders keyword matches before character matches, and name before description", () => {
+    FastCheck.assert(
+      FastCheck.property(term, order, (query, keys) => {
+        const expected = tiers(query)
+        const shuffled = expected
+          .map((skill, index) => ({ skill, key: keys[index] }))
+          .sort((a, b) => a.key - b.key)
+          .map((entry) => entry.skill)
+
+        const actual = filterSkills(shuffled, query)
+
+        expect(actual.map((skill) => skill.title)).toEqual(expected.map((skill) => skill.title))
+      }),
+      { numRuns: 200 },
+    )
+  })
+})
