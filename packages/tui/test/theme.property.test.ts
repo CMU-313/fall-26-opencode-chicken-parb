@@ -344,8 +344,8 @@ test("R4 produces equivalent results through slash command and theme button", as
 test("R5 restores persisted themes and honors configuration overrides", async () => {
   const kinds = new Set<string>()
   const lockMethods = new Set<string>()
-  const save = createPersistenceWorker()
-  const restore = createPersistenceWorker()
+  const save = createRecyclingPersistenceWorker()
+  const restore = createRecyclingPersistenceWorker()
   try {
     // R5 — Theme persistence: The selected theme must persist across OpenCode restarts unless an explicit configuration override takes precedence. (Round-trip)
     await fc.assert(
@@ -380,13 +380,12 @@ test("R5 restores persisted themes and honors configuration overrides", async ()
             )
           else expect(restarted.appearance).toEqual(saved.appearance)
 
-          if (override) {
-            const withoutOverride = await restore.run({ action: "restore", root: tmp.path, state, mode })
-            expect(withoutOverride.initialSelected).toBe(selected)
-            expect(withoutOverride.selected).toBe(selected)
-            expect(withoutOverride.locked).toBe(true)
-            expect(withoutOverride.appearance).toEqual(saved.appearance)
-          }
+          if (!override) return
+          const withoutOverride = await restore.run({ action: "restore", root: tmp.path, state, mode })
+          expect(withoutOverride.initialSelected).toBe(selected)
+          expect(withoutOverride.selected).toBe(selected)
+          expect(withoutOverride.locked).toBe(true)
+          expect(withoutOverride.appearance).toEqual(saved.appearance)
         },
       ),
       { seed: PERSISTENCE_SEED, numRuns: PERSISTENCE_RUNS },
@@ -399,7 +398,7 @@ test("R5 restores persisted themes and honors configuration overrides", async ()
 }, 120_000)
 
 test("R5 falls back from stale persisted theme names", async () => {
-  const restore = createPersistenceWorker()
+  const restore = createRecyclingPersistenceWorker()
   try {
     // Generated invalid names cover stale ASCII and Unicode KV values, while both
     // modes verify that restart resolves the real default appearance and retained lock.
@@ -525,6 +524,25 @@ function createPersistenceWorker() {
     async close() {
       child.stdin.end()
       await child.exited
+    },
+  }
+}
+
+function createRecyclingPersistenceWorker() {
+  let worker = createPersistenceWorker()
+  let requests = 0
+  return {
+    async run(request: PersistenceRequest) {
+      if (requests === 5) {
+        await worker.close()
+        worker = createPersistenceWorker()
+        requests = 0
+      }
+      requests++
+      return worker.run(request)
+    },
+    close() {
+      return worker.close()
     },
   }
 }
