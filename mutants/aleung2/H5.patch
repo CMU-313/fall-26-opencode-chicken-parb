@@ -1,0 +1,13 @@
+diff --git a/packages/tui/src/context/theme.tsx b/packages/tui/src/context/theme.tsx
+index 909dd69..bf7a552 100644
+--- a/packages/tui/src/context/theme.tsx
++++ b/packages/tui/src/context/theme.tsx
+@@ -125,7 +125,7 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
+     )
+ 
+     createEffect(() => {
+-      const theme = config.theme
++      const theme = kv.get("theme") ?? config.theme
+       if (theme) setStore("active", theme)
+     })
+ 

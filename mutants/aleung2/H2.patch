@@ -1,0 +1,15 @@
+diff --git a/packages/tui/src/context/theme.tsx b/packages/tui/src/context/theme.tsx
+index 909dd69..ffa4ecc 100644
+--- a/packages/tui/src/context/theme.tsx
++++ b/packages/tui/src/context/theme.tsx
+@@ -253,8 +253,9 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
+       themeRefreshTimeouts.length = 0
+     })
+ 
++    const active = store.themes[store.active]
+     const values = createMemo(() => {
+-      const active = store.themes[store.active]
++    
+       if (active) return resolveTheme(active, store.mode)
+ 
+       const saved = kv.get("theme")
