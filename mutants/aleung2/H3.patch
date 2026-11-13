@@ -1,0 +1,13 @@
+diff --git a/packages/tui/src/feature-plugins/system/theme-button.tsx b/packages/tui/src/feature-plugins/system/theme-button.tsx
+index d80a755..864358c 100644
+--- a/packages/tui/src/feature-plugins/system/theme-button.tsx
++++ b/packages/tui/src/feature-plugins/system/theme-button.tsx
+@@ -14,7 +14,7 @@ const tui: TuiPlugin = async (api) => {
+             <text
+             fg={api.theme.current.accent}
+             onMouseUp={() => {
+-                api.ui.dialog.replace(() => <DialogThemeList />)
++                api.ui.dialog.clear()
+             }}
+             >
+             Theme

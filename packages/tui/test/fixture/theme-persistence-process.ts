@@ -14,6 +14,7 @@ type Request = {
   state: string
   theme?: string
   mode: "dark" | "light"
+  lockMethod?: "setMode" | "lock"
 }
 
 const reader = Bun.stdin.stream().pipeThrough(new TextDecoderStream()).getReader()
@@ -54,7 +55,7 @@ async function run(request: Request) {
             return createComponent(KVProvider, {
               get children() {
                 return createComponent(ThemeProvider, {
-                  mode: "dark",
+                  mode: request.action === "save" && request.lockMethod === "lock" ? request.mode : "dark",
                   source: { discover: async () => ({}) },
                   get children() {
                     return createComponent(Probe, {})
@@ -71,16 +72,20 @@ async function run(request: Request) {
   try {
     await ready
     const initialSelected = theme.selected
+    const initialLocked = theme.locked()
     if (request.action === "save") {
       if (!request.theme) throw new Error("save requires a theme")
-      theme.setMode(request.mode)
+      if (request.lockMethod === "lock") theme.lock()
+      else theme.setMode(request.mode)
       if (!theme.set(request.theme)) throw new Error(`invalid theme ${request.theme}`)
       await waitForPersistence(path.join(request.state, "kv.json"), request.theme, request.mode)
     }
     return {
       initialSelected,
+      initialLocked,
       selected: theme.selected,
       mode: theme.mode(),
+      locked: theme.locked(),
       appearance: snapshotValue(theme.theme),
     }
   } finally {

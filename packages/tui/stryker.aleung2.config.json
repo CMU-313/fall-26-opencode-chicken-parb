@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test --timeout 120000 test/theme.property.test.ts"
+  },
+  "mutate": ["src/context/theme.tsx:256-298"],
+  "coverageAnalysis": "off",
+  "reporters": ["html", "clear-text", "progress"],
+  "concurrency": 4
+}

@@ -1,0 +1,13 @@
+diff --git a/packages/tui/src/prompt/history.tsx b/packages/tui/src/prompt/history.tsx
+index e795d11..8e94403 100644
+--- a/packages/tui/src/prompt/history.tsx
++++ b/packages/tui/src/prompt/history.tsx
+@@ -38,7 +38,7 @@ export function parsePromptHistory(text: string) {
+       }
+     })
+     .filter((line): line is PromptInfo => line !== undefined)
+-    .slice(-MAX_HISTORY_ENTRIES)
++    .slice(-(MAX_HISTORY_ENTRIES - 1))
+ }
+ 
+ export function isDuplicateEntry(previous: PromptInfo | undefined, next: PromptInfo): boolean {

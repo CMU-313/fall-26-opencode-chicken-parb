@@ -27,6 +27,10 @@ const EQUIVALENCE_RUNS = 30
 const themeName = fc.constantFrom(...Object.keys(DEFAULT_THEMES))
 const persistedThemeName = fc.constantFrom(...Object.keys(DEFAULT_THEMES).filter((name) => name !== "opencode"))
 
+// The reserved prefix guarantees an invalid name while the generated suffix
+// covers empty, ASCII, and Unicode boundary data in selection, config, and stale KV state.
+const invalidThemeName = fc.string({ maxLength: 40 }).map((name) => `missing:${name}`)
+
 // Generating two names and rejecting equal pairs guarantees that every case
 // exercises a real intermediate theme change instead of an A -> A -> A no-op.
 const distinctThemes = fc.tuple(themeName, themeName).filter(([initial, intermediate]) => initial !== intermediate)
@@ -35,8 +39,13 @@ const distinctThemes = fc.tuple(themeName, themeName).filter(([initial, intermed
 // color and styling values in their dark and light branches.
 const themeMode = fc.constantFrom<"dark" | "light">("dark", "light")
 
+// Both public locking operations are generated so persistence is checked after
+// pinning an explicit mode and after locking the provider's current mode.
+const modeLockMethod = fc.constantFrom<"setMode" | "lock">("setMode", "lock")
+
 // A non-default selection proves restoration came from disk rather than the
-// provider fallback. Overrides are either absent or a distinct valid theme.
+// provider fallback. Overrides are absent, equal, distinct, or guaranteed-invalid;
+// the invalid boundary checks that an unresolvable config cannot replace the saved appearance.
 const persistenceCase = persistedThemeName.chain((selected) =>
   fc.oneof(
     fc.constant({ selected, override: undefined as string | undefined, kind: "none" as const }),
@@ -44,6 +53,7 @@ const persistenceCase = persistedThemeName.chain((selected) =>
     themeName
       .filter((override) => override !== selected)
       .map((override) => ({ selected, override: override as string | undefined, kind: "different" as const })),
+    invalidThemeName.map((override) => ({ selected, override: override as string | undefined, kind: "invalid" as const })),
   ),
 )
 
@@ -134,21 +144,29 @@ test("R3 restores resolved appearance after a theme round-trip", async () => {
 
     // R3 — Theme reversibility: Switching from Theme A to Theme B and back to Theme A must restore the original theme-controlled appearance. (Round-trip)
     fc.assert(
-      fc.property(distinctThemes, themeMode, ([initial, intermediate], mode) => {
+      fc.property(distinctThemes, themeMode, invalidThemeName, ([initial, intermediate], mode, invalid) => {
         theme.setMode(mode)
         expect(theme.mode()).toBe(mode)
 
         expect(theme.set(initial)).toBe(true)
         expect(theme.selected).toBe(initial)
-        const before = snapshotResolvedTheme(theme.theme)
+        const before = snapshotThemeAppearance(theme, app.renderer)
+        expect(before.background).toEqual(before.theme.background)
+        expect(theme.set(invalid)).toBe(false)
+        expect(theme.selected).toBe(initial)
+        expect(snapshotThemeAppearance(theme, app.renderer)).toEqual(before)
 
         expect(theme.set(intermediate)).toBe(true)
         expect(theme.selected).toBe(intermediate)
-        expect(snapshotResolvedTheme(theme.theme)).not.toEqual(before)
+        const changed = snapshotThemeAppearance(theme, app.renderer)
+        expect(changed.background).toEqual(changed.theme.background)
+        expect(changed).not.toEqual(before)
 
         expect(theme.set(initial)).toBe(true)
         expect(theme.selected).toBe(initial)
-        expect(snapshotResolvedTheme(theme.theme)).toEqual(before)
+        const restored = snapshotThemeAppearance(theme, app.renderer)
+        expect(restored.background).toEqual(restored.theme.background)
+        expect(restored).toEqual(before)
         lastTheme = initial
       }),
       { seed: PROPERTY_SEED, numRuns: PROPERTY_RUNS },
@@ -324,54 +342,84 @@ test("R4 produces equivalent results through slash command and theme button", as
 
 test("R5 restores persisted themes and honors configuration overrides", async () => {
   const kinds = new Set<string>()
+  const lockMethods = new Set<string>()
   const save = createPersistenceWorker()
   const restore = createPersistenceWorker()
   try {
     // R5 — Theme persistence: The selected theme must persist across OpenCode restarts unless an explicit configuration override takes precedence. (Round-trip)
     await fc.assert(
-      fc.asyncProperty(persistenceCase, themeMode, async ({ selected, override, kind }, mode) => {
-        kinds.add(kind)
-        await using tmp = await tmpdir()
-        const state = path.join(tmp.path, "state")
-        await mkdir(state, { recursive: true })
-        await Bun.write(path.join(state, "kv.json"), "{}")
+      fc.asyncProperty(
+        persistenceCase,
+        themeMode,
+        modeLockMethod,
+        invalidThemeName,
+        async ({ selected, override, kind }, mode, lockMethod, invalidSaved) => {
+          kinds.add(kind)
+          lockMethods.add(lockMethod)
+          await using tmp = await tmpdir()
+          const state = path.join(tmp.path, "state")
+          await mkdir(state, { recursive: true })
+          await Bun.write(path.join(state, "kv.json"), "{}")
 
-        const saved = await save.run({ action: "save", root: tmp.path, state, theme: selected, mode })
-        expect(saved.initialSelected).toBe("opencode")
-        expect(saved.selected).toBe(selected)
-        expect(saved.mode).toBe(mode)
+          const saved = await save.run({ action: "save", root: tmp.path, state, theme: selected, mode, lockMethod })
+          expect(saved.initialSelected).toBe("opencode")
+          expect(saved.initialLocked).toBe(false)
+          expect(saved.selected).toBe(selected)
+          expect(saved.mode).toBe(mode)
+          expect(saved.locked).toBe(true)
+          expect(saved.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[selected]!, mode)))
 
-        const restarted = await restore.run({ action: "restore", root: tmp.path, state, theme: override, mode })
-        expect(restarted.initialSelected).toBe(override ?? selected)
-        expect(restarted.selected).toBe(override ?? selected)
-        expect(restarted.mode).toBe(mode)
-        if (kind !== "different") expect(restarted.appearance).toEqual(saved.appearance)
-        else
-          expect(restarted.appearance).toEqual(
-            snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[override!]!, mode)),
-          )
+          const restarted = await restore.run({ action: "restore", root: tmp.path, state, theme: override, mode })
+          expect(restarted.initialSelected).toBe(override ?? selected)
+          expect(restarted.selected).toBe(override ?? selected)
+          expect(restarted.mode).toBe(mode)
+          expect(restarted.locked).toBe(true)
+          if (kind === "different")
+            expect(restarted.appearance).toEqual(
+              snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[override!]!, mode)),
+            )
+          else expect(restarted.appearance).toEqual(saved.appearance)
 
-        if (!override) return
-        const withoutOverride = await restore.run({ action: "restore", root: tmp.path, state, mode })
-        expect(withoutOverride.initialSelected).toBe(selected)
-        expect(withoutOverride.selected).toBe(selected)
-        expect(withoutOverride.appearance).toEqual(saved.appearance)
-      }),
+          if (override) {
+            const withoutOverride = await restore.run({ action: "restore", root: tmp.path, state, mode })
+            expect(withoutOverride.initialSelected).toBe(selected)
+            expect(withoutOverride.selected).toBe(selected)
+            expect(withoutOverride.locked).toBe(true)
+            expect(withoutOverride.appearance).toEqual(saved.appearance)
+          }
+
+          const persisted = await Bun.file(path.join(state, "kv.json")).json()
+          await Bun.write(path.join(state, "kv.json"), JSON.stringify({ ...persisted, theme: invalidSaved }))
+          const stale = await restore.run({ action: "restore", root: tmp.path, state, mode })
+          expect(stale.initialSelected).toBe(invalidSaved)
+          expect(stale.locked).toBe(true)
+          expect(stale.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES.opencode, mode)))
+        },
+      ),
       { seed: PERSISTENCE_SEED, numRuns: PERSISTENCE_RUNS },
     )
-    expect(kinds).toEqual(new Set(["none", "same", "different"]))
+    expect(kinds).toEqual(new Set(["none", "same", "different", "invalid"]))
+    expect(lockMethods).toEqual(new Set(["setMode", "lock"]))
   } finally {
     await Promise.all([save.close(), restore.close()])
   }
 }, 120_000)
 
-type PersistenceResult = { initialSelected: string; selected: string; mode: "dark" | "light"; appearance: unknown }
+type PersistenceResult = {
+  initialSelected: string
+  initialLocked: boolean
+  selected: string
+  mode: "dark" | "light"
+  locked: boolean
+  appearance: unknown
+}
 type PersistenceRequest = {
   action: "save" | "restore"
   root: string
   state: string
   theme?: string
   mode: "dark" | "light"
+  lockMethod?: "setMode" | "lock"
 }
 
 type ThemeSelectionResult = {
@@ -551,8 +599,17 @@ async function waitForFile(file: string, expected: string) {
   throw new Error(`timed out waiting for ${file}`)
 }
 
+function snapshotThemeAppearance(theme: ReturnType<typeof useTheme>, renderer: object) {
+  return {
+    theme: snapshotResolvedTheme(theme.theme),
+    background: snapshotValue(Reflect.get(renderer, "backgroundColor")),
+    syntax: snapshotValue(Object.fromEntries(theme.syntax().getAllStyles())),
+    subtleSyntax: snapshotValue(Object.fromEntries(theme.subtleSyntax().getAllStyles())),
+  }
+}
+
 function snapshotResolvedTheme(theme: Theme) {
-  return snapshotValue(theme)
+  return snapshotValue(theme) as Record<string, unknown>
 }
 
 function snapshotValue(value: unknown): unknown {
