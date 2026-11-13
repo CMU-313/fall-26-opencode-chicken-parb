@@ -523,6 +523,7 @@ function createPersistenceWorker() {
     },
     async close() {
       child.stdin.end()
+      child.kill()
       await child.exited
     },
   }
