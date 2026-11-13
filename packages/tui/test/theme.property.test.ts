@@ -19,6 +19,7 @@ const PROPERTY_SEED = 17313
 const PROPERTY_RUNS = 100
 const PERSISTENCE_SEED = 517313
 const PERSISTENCE_RUNS = 50
+const STALE_PERSISTENCE_RUNS = 20
 const SESSION_SEED = 117313
 const SESSION_RUNS = 40
 const EQUIVALENCE_SEED = 417313
@@ -352,8 +353,7 @@ test("R5 restores persisted themes and honors configuration overrides", async ()
         persistenceCase,
         themeMode,
         modeLockMethod,
-        invalidThemeName,
-        async ({ selected, override, kind }, mode, lockMethod, invalidSaved) => {
+        async ({ selected, override, kind }, mode, lockMethod) => {
           kinds.add(kind)
           lockMethods.add(lockMethod)
           await using tmp = await tmpdir()
@@ -387,13 +387,6 @@ test("R5 restores persisted themes and honors configuration overrides", async ()
             expect(withoutOverride.locked).toBe(true)
             expect(withoutOverride.appearance).toEqual(saved.appearance)
           }
-
-          const persisted = await Bun.file(path.join(state, "kv.json")).json()
-          await Bun.write(path.join(state, "kv.json"), JSON.stringify({ ...persisted, theme: invalidSaved }))
-          const stale = await restore.run({ action: "restore", root: tmp.path, state, mode })
-          expect(stale.initialSelected).toBe(invalidSaved)
-          expect(stale.locked).toBe(true)
-          expect(stale.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES.opencode, mode)))
         },
       ),
       { seed: PERSISTENCE_SEED, numRuns: PERSISTENCE_RUNS },
@@ -402,6 +395,31 @@ test("R5 restores persisted themes and honors configuration overrides", async ()
     expect(lockMethods).toEqual(new Set(["setMode", "lock"]))
   } finally {
     await Promise.all([save.close(), restore.close()])
+  }
+}, 120_000)
+
+test("R5 falls back from stale persisted theme names", async () => {
+  const restore = createPersistenceWorker()
+  try {
+    // Generated invalid names cover stale ASCII and Unicode KV values, while both
+    // modes verify that restart resolves the real default appearance and retained lock.
+    await fc.assert(
+      fc.asyncProperty(invalidThemeName, themeMode, async (invalid, mode) => {
+        await using tmp = await tmpdir()
+        const state = path.join(tmp.path, "state")
+        await mkdir(state, { recursive: true })
+        await Bun.write(path.join(state, "kv.json"), JSON.stringify({ theme: invalid, theme_mode_lock: mode }))
+
+        const restarted = await restore.run({ action: "restore", root: tmp.path, state, mode })
+        expect(restarted.initialSelected).toBe(invalid)
+        expect(restarted.mode).toBe(mode)
+        expect(restarted.locked).toBe(true)
+        expect(restarted.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES.opencode, mode)))
+      }),
+      { seed: PERSISTENCE_SEED, numRuns: STALE_PERSISTENCE_RUNS },
+    )
+  } finally {
+    await restore.close()
   }
 }, 120_000)
 
