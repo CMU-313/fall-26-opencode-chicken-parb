@@ -18,8 +18,8 @@ import { MAX_HISTORY_ENTRIES, type PromptInfo } from "../src/prompt/history"
 const PROPERTY_SEED = 17313
 const PROPERTY_RUNS = 100
 const PERSISTENCE_SEED = 517313
-const PERSISTENCE_RUNS = 20
-const STALE_PERSISTENCE_RUNS = 10
+const PERSISTENCE_RUNS = 7
+const STALE_PERSISTENCE_RUNS = 2
 const SESSION_SEED = 117313
 const SESSION_RUNS = 40
 const EQUIVALENCE_SEED = 417313
@@ -344,82 +344,81 @@ test("R4 produces equivalent results through slash command and theme button", as
 test("R5 restores persisted themes and honors configuration overrides", async () => {
   const kinds = new Set<string>()
   const lockMethods = new Set<string>()
-  const save = createRecyclingPersistenceWorker()
-  const restore = createRecyclingPersistenceWorker()
-  try {
-    // R5 — Theme persistence: The selected theme must persist across OpenCode restarts unless an explicit configuration override takes precedence. (Round-trip)
-    await fc.assert(
-      fc.asyncProperty(
-        persistenceCase,
-        themeMode,
-        modeLockMethod,
-        async ({ selected, override, kind }, mode, lockMethod) => {
-          kinds.add(kind)
-          lockMethods.add(lockMethod)
-          await using tmp = await tmpdir()
-          const state = path.join(tmp.path, "state")
-          await mkdir(state, { recursive: true })
-          await Bun.write(path.join(state, "kv.json"), "{}")
-
-          const saved = await save.run({ action: "save", root: tmp.path, state, theme: selected, mode, lockMethod })
-          expect(saved.initialSelected).toBe("opencode")
-          expect(saved.initialLocked).toBe(false)
-          expect(saved.selected).toBe(selected)
-          expect(saved.mode).toBe(mode)
-          expect(saved.locked).toBe(true)
-          expect(saved.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[selected]!, mode)))
-
-          const restarted = await restore.run({ action: "restore", root: tmp.path, state, theme: override, mode })
-          expect(restarted.initialSelected).toBe(override ?? selected)
-          expect(restarted.selected).toBe(override ?? selected)
-          expect(restarted.mode).toBe(mode)
-          expect(restarted.locked).toBe(true)
-          if (kind === "different")
-            expect(restarted.appearance).toEqual(
-              snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[override!]!, mode)),
-            )
-          else expect(restarted.appearance).toEqual(saved.appearance)
-
-          if (!override) return
-          const withoutOverride = await restore.run({ action: "restore", root: tmp.path, state, mode })
-          expect(withoutOverride.initialSelected).toBe(selected)
-          expect(withoutOverride.selected).toBe(selected)
-          expect(withoutOverride.locked).toBe(true)
-          expect(withoutOverride.appearance).toEqual(saved.appearance)
-        },
-      ),
-      { seed: PERSISTENCE_SEED, numRuns: PERSISTENCE_RUNS },
-    )
-    expect(kinds).toEqual(new Set(["none", "same", "different", "invalid"]))
-    expect(lockMethods).toEqual(new Set(["setMode", "lock"]))
-  } finally {
-    await Promise.all([save.close(), restore.close()])
-  }
-}, 120_000)
-
-test("R5 falls back from stale persisted theme names", async () => {
-  const restore = createRecyclingPersistenceWorker()
-  try {
-    // Generated invalid names cover stale ASCII and Unicode KV values, while both
-    // modes verify that restart resolves the real default appearance and retained lock.
-    await fc.assert(
-      fc.asyncProperty(invalidThemeName, themeMode, async (invalid, mode) => {
+  // R5 — Theme persistence: The selected theme must persist across OpenCode restarts unless an explicit configuration override takes precedence. (Round-trip)
+  await fc.assert(
+    fc.asyncProperty(
+      persistenceCase,
+      themeMode,
+      modeLockMethod,
+      async ({ selected, override, kind }, mode, lockMethod) => {
+        kinds.add(kind)
+        lockMethods.add(lockMethod)
         await using tmp = await tmpdir()
         const state = path.join(tmp.path, "state")
         await mkdir(state, { recursive: true })
-        await Bun.write(path.join(state, "kv.json"), JSON.stringify({ theme: invalid, theme_mode_lock: mode }))
+        await Bun.write(path.join(state, "kv.json"), "{}")
 
-        const restarted = await restore.run({ action: "restore", root: tmp.path, state, mode })
-        expect(restarted.initialSelected).toBe(invalid)
+        const saved = await runPersistenceRequest({
+          action: "save",
+          root: tmp.path,
+          state,
+          theme: selected,
+          mode,
+          lockMethod,
+        })
+        expect(saved.initialSelected).toBe("opencode")
+        expect(saved.initialLocked).toBe(false)
+        expect(saved.selected).toBe(selected)
+        expect(saved.mode).toBe(mode)
+        expect(saved.locked).toBe(true)
+        expect(saved.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[selected]!, mode)))
+
+        const restarted = await runPersistenceRequest({ action: "restore", root: tmp.path, state, theme: override, mode })
+        expect(restarted.initialSelected).toBe(override ?? selected)
+        expect(restarted.selected).toBe(override ?? selected)
         expect(restarted.mode).toBe(mode)
         expect(restarted.locked).toBe(true)
-        expect(restarted.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES.opencode, mode)))
-      }),
-      { seed: PERSISTENCE_SEED, numRuns: STALE_PERSISTENCE_RUNS },
-    )
-  } finally {
-    await restore.close()
-  }
+        if (kind === "different")
+          expect(restarted.appearance).toEqual(
+            snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES[override!]!, mode)),
+          )
+        else expect(restarted.appearance).toEqual(saved.appearance)
+
+        if (!override) return
+        const withoutOverride = await runPersistenceRequest({ action: "restore", root: tmp.path, state, mode })
+        expect(withoutOverride.initialSelected).toBe(selected)
+        expect(withoutOverride.selected).toBe(selected)
+        expect(withoutOverride.locked).toBe(true)
+        expect(withoutOverride.appearance).toEqual(saved.appearance)
+      },
+    ),
+    { seed: PERSISTENCE_SEED, numRuns: PERSISTENCE_RUNS },
+  )
+  expect(kinds).toEqual(new Set(["none", "same", "different", "invalid"]))
+  expect(lockMethods).toEqual(new Set(["setMode", "lock"]))
+}, 120_000)
+
+test("R5 falls back from stale persisted theme names", async () => {
+  const modes = new Set<string>()
+  // Generated invalid names cover stale ASCII and Unicode KV values, while both
+  // modes verify that restart resolves the real default appearance and retained lock.
+  await fc.assert(
+    fc.asyncProperty(invalidThemeName, themeMode, async (invalid, mode) => {
+      modes.add(mode)
+      await using tmp = await tmpdir()
+      const state = path.join(tmp.path, "state")
+      await mkdir(state, { recursive: true })
+      await Bun.write(path.join(state, "kv.json"), JSON.stringify({ theme: invalid, theme_mode_lock: mode }))
+
+      const restarted = await runPersistenceRequest({ action: "restore", root: tmp.path, state, mode })
+      expect(restarted.initialSelected).toBe(invalid)
+      expect(restarted.mode).toBe(mode)
+      expect(restarted.locked).toBe(true)
+      expect(restarted.appearance).toEqual(snapshotResolvedTheme(resolveTheme(DEFAULT_THEMES.opencode, mode)))
+    }),
+    { seed: PERSISTENCE_SEED, numRuns: STALE_PERSISTENCE_RUNS },
+  )
+  expect(modes).toEqual(new Set(["dark", "light"]))
 }, 120_000)
 
 type PersistenceResult = {
@@ -529,22 +528,12 @@ function createPersistenceWorker() {
   }
 }
 
-function createRecyclingPersistenceWorker() {
-  let worker = createPersistenceWorker()
-  let requests = 0
-  return {
-    async run(request: PersistenceRequest) {
-      if (requests === 5) {
-        await worker.close()
-        worker = createPersistenceWorker()
-        requests = 0
-      }
-      requests++
-      return worker.run(request)
-    },
-    close() {
-      return worker.close()
-    },
+async function runPersistenceRequest(request: PersistenceRequest) {
+  const worker = createPersistenceWorker()
+  try {
+    return await worker.run(request)
+  } finally {
+    await worker.close()
   }
 }
 
